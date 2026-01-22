@@ -58,6 +58,7 @@ const userSlice = createSlice({
                 givenName: action.payload.givenName,
                 familyName: action.payload.familyName,
                 token: action.payload.token, // Add token to user state
+                role: action.payload.role, // Add role to user state
             };
             saveUserToStorage(state.user);
         },

@@ -38,28 +38,8 @@ const navigationSlice = createSlice({
             });
         },
         goBack: (state) => {
-            if (state.navigationHistory.length > 0) {
-                state.navigationHistory.pop(); // Remove current
-                const previous = state.navigationHistory[state.navigationHistory.length - 1];
-
-                if (previous) {
-                    if (previous.type === 'page') {
-                        state.currentPage = previous.value;
-                        state.currentStrategy = null;
-                    } else if (previous.type === 'tab') {
-                        state.currentTab = previous.value;
-                        state.currentStrategy = null;
-                    } else if (previous.type === 'strategy') {
-                        state.currentStrategy = previous.value;
-                    }
-                } else {
-                    // No history, reset to strategies list
-                    state.currentStrategy = null;
-                }
-            } else {
-                // No history, reset to strategies list
-                state.currentStrategy = null;
-            }
+            // Simple approach: just reset to strategies list
+            state.currentStrategy = null;
         },
         resetNavigation: (state) => {
             state.currentPage = 'Home';

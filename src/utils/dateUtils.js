@@ -11,9 +11,9 @@ export const formatDate = (date) => {
     // Check if valid date
     if (isNaN(dateObj.getTime())) return 'N/A';
 
-    const day = dateObj.getDate();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+        'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     const month = monthNames[dateObj.getMonth()];
     const year = dateObj.getFullYear();
 

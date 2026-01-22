@@ -60,6 +60,8 @@ const initialState = {
     error: null,
     trialActivating: false,
     shouldShowTrial: false,
+    showPaymentPopup: false,
+    paymentPlan: 'MarketAI',
 };
 
 // Subscription Slice
@@ -83,6 +85,15 @@ const subscriptionSlice = createSlice({
             state.userSubscription = null;
             state.error = null;
             state.shouldShowTrial = false;
+            state.showPaymentPopup = false;
+        },
+        // Set payment popup visibility
+        setPaymentPopup: (state, action) => {
+            state.showPaymentPopup = action.payload;
+        },
+        // Set specific payment plan to show
+        setPaymentPlan: (state, action) => {
+            state.paymentPlan = action.payload;
         },
 
         // Clear error
@@ -151,6 +162,8 @@ export const {
     setShouldShowTrial,
     clearSubscriptionData,
     clearError,
+    setPaymentPopup,
+    setPaymentPlan,
 } = subscriptionSlice.actions;
 
 // Selectors
@@ -160,6 +173,8 @@ export const selectSubscriptionLoading = (state) => state.subscription.loading;
 export const selectSubscriptionError = (state) => state.subscription.error;
 export const selectShouldShowTrial = (state) => state.subscription.shouldShowTrial;
 export const selectTrialActivating = (state) => state.subscription.trialActivating;
+export const selectShowPaymentPopup = (state) => state.subscription.showPaymentPopup;
+export const selectPaymentPlan = (state) => state.subscription.paymentPlan;
 export const selectHasActiveSubscription = (state) => {
     return state.subscription.products && state.subscription.products.length > 0;
 };

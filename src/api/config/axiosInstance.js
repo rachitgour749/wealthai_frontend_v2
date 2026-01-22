@@ -7,7 +7,7 @@ import { logoutUser } from '../../store/slices/userSlice';
 // Create axios instance with base configuration
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000, // 30 seconds
+    timeout: 300000, // 30 seconds
     headers: {
         'Content-Type': 'application/json',
     },

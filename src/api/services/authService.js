@@ -14,16 +14,16 @@ import { saveToken } from '../../utils/tokenManager';
  */
 export const googleLogin = async (googleToken) => {
     try {
-        console.log('AuthService: Sending request to backend...');
-        console.log('Payload:', { token: googleToken });
+
+
 
         const response = await axiosInstance.post(API_ENDPOINTS.GOOGLE_LOGIN, {
             token: googleToken,
         });
 
-        console.log('AuthService: Full axios response:', response);
-        console.log('AuthService: Response data:', response.data);
-        console.log('AuthService: Response status:', response.status);
+
+
+
 
         // Extract data from axios response
         // Backend returns: { success: true, data: { token, user_email, user_name, ... } }
@@ -35,7 +35,7 @@ export const googleLogin = async (googleToken) => {
         }
 
         const backendData = responseData.data;
-        console.log('AuthService: Backend data:', backendData);
+
 
         // Extract token
         const token = backendData.token;
@@ -46,7 +46,7 @@ export const googleLogin = async (googleToken) => {
 
         // Save token to localStorage
         saveToken(token);
-        console.log('AuthService: Token saved to localStorage');
+
 
         // Map backend user fields to our user object
         const user = {
@@ -57,9 +57,10 @@ export const googleLogin = async (googleToken) => {
             isNewUser: backendData.is_new_user,
             createdAt: backendData.created_at,
             updatedAt: backendData.updated_at,
+            role: backendData.role, // Map role from backend
         };
 
-        console.log('AuthService: Mapped user data:', user);
+
 
         return { token, user };
     } catch (error) {

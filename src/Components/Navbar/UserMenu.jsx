@@ -1,7 +1,10 @@
 import React from 'react';
 import UserAvatar from './UserAvatar';
+import { useDispatch } from 'react-redux';
+import { setPaymentPopup } from '../../store/slices/subscriptionSlice';
 
-const UserMenu = ({ user, onSignOut }) => {
+const UserMenu = ({ user, onSignOut, onCloseMenu, onProfileClick }) => {
+    const dispatch = useDispatch();
     return (
         <div className='absolute top-[60px] right-0 min-w-[240px] bg-white rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 overflow-hidden backdrop-blur-sm animate-[slideDown_0.2s_ease-out] z-50'>
             {/* User Profile Section */}
@@ -15,7 +18,13 @@ const UserMenu = ({ user, onSignOut }) => {
             {/* Menu Items */}
             <div className='py-2 px-1'>
                 {/* My Profile */}
-                <div className='group flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_2px_8px_rgba(59,130,246,0.15)] hover:scale-[1.02] active:scale-[0.98]'>
+                <div
+                    className='group flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_2px_8px_rgba(59,130,246,0.15)] hover:scale-[1.02] active:scale-[0.98]'
+                    onClick={() => {
+                        if (onProfileClick) onProfileClick();
+                        if (onCloseMenu) onCloseMenu();
+                    }}
+                >
                     <div className='flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-blue-500 transition-all duration-200 shadow-sm group-hover:shadow-md'>
                         <svg className='w-4 h-4 text-gray-600 group-hover:text-white transition-colors' fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -25,7 +34,13 @@ const UserMenu = ({ user, onSignOut }) => {
                 </div>
 
                 {/* Subscription */}
-                <div className='group flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100/50 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_2px_8px_rgba(34,197,94,0.15)] hover:scale-[1.02] active:scale-[0.98]'>
+                <div
+                    className='group flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100/50 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_2px_8px_rgba(34,197,94,0.15)] hover:scale-[1.02] active:scale-[0.98]'
+                    onClick={() => {
+                        dispatch(setPaymentPopup(true));
+                        if (onCloseMenu) onCloseMenu();
+                    }}
+                >
                     <div className='flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-green-500 transition-all duration-200 shadow-sm group-hover:shadow-md'>
                         <svg className='w-4 h-4 text-gray-600 group-hover:text-white transition-colors' fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />

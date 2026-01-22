@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, selectUser } from '../store/slices/userSlice';
+import { selectCurrentPage } from '../store/slices/navigationSlice';
 import { handleLogout } from '../handlers/authHandler';
 import { Assets } from '../assets/Assets';
 import LoginPopup from './LoginPopup';
@@ -13,6 +14,7 @@ const Navbar = ({ setCurrentPage }) => {
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const user = useSelector(selectUser);
+    const currentPage = useSelector(selectCurrentPage);
     const [menu, setMenu] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
     const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -26,6 +28,31 @@ const Navbar = ({ setCurrentPage }) => {
         setShowLoginPopup(true);
     };
 
+    const handleProfileClick = () => {
+        setCurrentPage('MyProfile');
+        setMenu(false);
+    };
+
+    // Determine what to display based on current page
+    const getNavbarTitle = () => {
+        switch (currentPage) {
+            case 'MarketsAi1':
+                return 'MarketsAi1';
+            case 'ChatAi1':
+                return 'ChatAi1';
+            case 'InvestAi1':
+                return 'InvestAi1';
+            case 'PortfolioAnalytics':
+                return 'MarketsAi1'; // Portfolio Analytics is part of MarketsAi1
+            case 'Home':
+            default:
+                return 'Wealth Wisers'; // Default for Home and TradeAi1
+        }
+    };
+
+    const navbarTitle = getNavbarTitle();
+    const showAsProductName = currentPage !== 'Home' && currentPage !== 'TradeAi1';
+
     return (
         <div className='fixed flex justify-between items-center w-full h-[60px] md:h-[70px] px-4 md:px-8 lg:px-16 bg-gradient-to-r from-wealth-50 from-15% via-wealth-100 from-25% via-wealth-800 via-65% to-wealth-900 z-40'>
             {/* Logo */}
@@ -38,11 +65,20 @@ const Navbar = ({ setCurrentPage }) => {
 
             {/* Center Title - Responsive */}
             <div className='flex flex-1 md:w-[290px] h-full justify-center items-center flex-col'>
-                <div className='text-xl md:text-3xl lg:text-4xl font-bold'>
-                    <span className='text-wealth-900'>Wealth</span>
-                    <span className='text-gold-300'>Wisers</span>
-                </div>
-                <p className='text-xs md:text-sm lg:text-md font-semibold text-gold-300 mt-[-3px] md:mt-[-5px]'>Product Portal</p>
+                {showAsProductName ? (
+                    <div className='text-xl md:text-3xl lg:text-4xl font-bold'>
+                        <span className='text-wealth-900'>{navbarTitle.replace('Ai1', '')}</span>
+                        <span className='text-gold-300'>Ai1</span>
+                    </div>
+                ) : (
+                    <>
+                        <div className='text-xl md:text-3xl lg:text-4xl font-bold'>
+                            <span className='text-wealth-900'>Wealth</span>
+                            <span className='text-gold-300'>Wisers</span>
+                        </div>
+                        <p className='text-xs md:text-sm lg:text-md font-semibold text-gold-300 mt-[-3px] md:mt-[-5px]'>Product Portal</p>
+                    </>
+                )}
             </div>
 
             {/* Desktop Navigation - Hidden on mobile */}
@@ -62,7 +98,7 @@ const Navbar = ({ setCurrentPage }) => {
                         </div>
 
                         {/* Desktop User Menu */}
-                        {menu && <UserMenu user={user} onSignOut={handleSignOut} />}
+                        {menu && <UserMenu user={user} onSignOut={handleSignOut} onCloseMenu={() => setMenu(false)} onProfileClick={handleProfileClick} />}
                     </div>
                 )}
             </div>

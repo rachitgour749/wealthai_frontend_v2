@@ -1,7 +1,42 @@
 import store from '../store/store';
+import Cookies from 'js-cookie';
 import { loginUser, logoutUser } from '../store/slices/userSlice';
 import { fetchProducts, clearSubscriptionData } from '../store/slices/subscriptionSlice';
+import { resetNavigation } from '../store/slices/navigationSlice';
 import * as authService from '../api/services/authService';
+
+/**
+ * Helper to set SSO cookie on the shared parent domain
+ * @param {string} token 
+ */
+const setSSOCookie = (token) => {
+    try {
+        const domain = window.location.hostname.includes('wealthai1.in') ? '.wealthai1.in' : window.location.hostname;
+        Cookies.set('sso_token', token, {
+            domain: domain,
+            path: '/',
+            expires: 7, // 7 days
+            secure: true,
+            sameSite: 'lax'
+        });
+
+    } catch (e) {
+        console.error('Error setting SSO cookie:', e);
+    }
+};
+
+/**
+ * Helper to clear SSO cookie
+ */
+const clearSSOCookie = () => {
+    try {
+        const domain = window.location.hostname.includes('wealthai1.in') ? '.wealthai1.in' : window.location.hostname;
+        Cookies.remove('sso_token', { domain: domain, path: '/' });
+
+    } catch (e) {
+        console.error('Error clearing SSO cookie:', e);
+    }
+};
 
 /**
  * Handle successful Google OAuth login
@@ -9,7 +44,7 @@ import * as authService from '../api/services/authService';
  */
 export const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
-        console.log('Google Login Success:', credentialResponse);
+
 
         // Get the Google token
         const googleToken = credentialResponse.credential;
@@ -18,12 +53,12 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
             throw new Error('No credential received from Google');
         }
 
-        console.log('Calling backend API with Google token...');
+
 
         // Call backend API to exchange Google token for JWT
         const response = await authService.googleLogin(googleToken);
 
-        console.log('Backend API Response:', response);
+
 
         const { token, user } = response;
 
@@ -48,7 +83,7 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
         );
         const googleUserInfo = JSON.parse(jsonPayload);
 
-        console.log('Google User Info:', googleUserInfo);
+
 
         // Dispatch login action with user data and token
         store.dispatch(loginUser({
@@ -58,20 +93,25 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
             picture: googleUserInfo.picture,
             givenName: googleUserInfo.given_name,
             familyName: googleUserInfo.family_name,
+            familyName: googleUserInfo.family_name,
             token: token, // JWT token from backend
+            role: user.role, // Role from backend response
         }));
 
-        console.log('User logged in successfully');
+        // Set SSO cookie for other applications (TradeAI)
+        setSSOCookie(token);
+
+
 
         // Fetch user's subscription products
         try {
-            console.log('Fetching products for:', googleUserInfo.email);
+
             const resultAction = await store.dispatch(fetchProducts(googleUserInfo.email));
 
             // Check if products fetch was successful
             if (fetchProducts.fulfilled.match(resultAction)) {
                 const products = resultAction.payload;
-                console.log('Products fetched:', products);
+
 
                 // Trial popup will be shown automatically by subscriptionSlice
                 // if products array is empty
@@ -127,7 +167,13 @@ export const handleLogout = () => {
         // Logout user
         store.dispatch(logoutUser());
 
-        console.log('User logged out successfully');
+        // Reset navigation to home page
+        store.dispatch(resetNavigation());
+
+        // Clear SSO cookie
+        clearSSOCookie();
+
+
     } catch (error) {
         console.error('Logout error:', error);
     }

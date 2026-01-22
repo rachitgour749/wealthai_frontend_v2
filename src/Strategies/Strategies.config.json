@@ -1,0 +1,199 @@
+{
+    "strategies": [
+        {
+            "id": "ETF_US",
+            "name": "ETF Rotation US",
+            "description": "Mean Reversion & Low Volatility ETFs rotation strategy for US markets",
+            "strategy_type": "International_ETF_Rotation",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose ETFs for rotation strategy"
+            },
+            "parameters": [
+                {
+                    "id": "accumulationWeeks",
+                    "label": "Accumulation Weeks",
+                    "type": "number",
+                    "defaultValue": 52
+                },
+                {
+                    "id": "totalCapitalPerWeek",
+                    "label": "Total Capital Per Week ($)",
+                    "type": "number",
+                    "defaultValue": 50000,
+                    "unit": "$"
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0.01
+                },
+                {
+                    "id": "riskLevel",
+                    "label": "Risk Level",
+                    "type": "number",
+                    "defaultValue": 0.06
+                }
+            ],
+            "available_etfs": [
+                {
+                    "symbol": "VTI",
+                    "sector": "Total Market",
+                    "years": 15
+                },
+                {
+                    "symbol": "AGG",
+                    "sector": "Bonds",
+                    "years": 18
+                },
+                {
+                    "symbol": "VOO",
+                    "sector": "S&P 500",
+                    "years": 10
+                }
+            ]
+        },
+        {
+            "id": "ETF",
+            "name": "ETF Rotation",
+            "description": "Mean Reversion & Low Volatility ETFs rotation strategy",
+            "strategy_type": "ETF_Rotation",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose ETFs for rotation strategy"
+            },
+            "parameters": [
+                {
+                    "id": "accumulationWeeks",
+                    "label": "Accumulation Weeks",
+                    "type": "number",
+                    "defaultValue": 52
+                },
+                {
+                    "id": "totalCapitalPerWeek",
+                    "label": "Total Capital Per Week",
+                    "type": "number",
+                    "defaultValue": 50000,
+                    "unit": "₹"
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        },
+        {
+            "id": "RS_ETF",
+            "name": "RS ETF Strategy",
+            "description": "Relative Strength based ETF trading strategy",
+            "strategy_type": "RS_ETF_Rotation",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose ETFs for relative strength strategy"
+            },
+            "parameters": [
+                {
+                    "id": "noOfPositions",
+                    "label": "No. of Positions",
+                    "type": "number",
+                    "defaultValue": 5
+                },
+                {
+                    "id": "totalCapital",
+                    "label": "Total Capital (₹)",
+                    "type": "number",
+                    "defaultValue": 50000
+                },
+                {
+                    "id": "stopLoss",
+                    "label": "Stop Loss (%)",
+                    "type": "number",
+                    "defaultValue": 8
+                },
+                {
+                    "id": "bufferCapital",
+                    "label": "Buffer Capital (%)",
+                    "type": "number",
+                    "defaultValue": 10
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0.1
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                },
+                {
+                    "id": "compoundingThreshold",
+                    "label": "Compounding Threshold (%)",
+                    "type": "number",
+                    "defaultValue": 25
+                }
+            ]
+        },
+        {
+            "id": "ETF_Payout",
+            "name": "ETF Rotation Payout",
+            "description": "Mean Reversion & Low Volatility ETFs rotation strategy with payout focus",
+            "strategy_type": "ETF_Payout",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose ETFs for payout focus strategy"
+            },
+            "parameters": [
+                {
+                    "id": "accumulationWeeks",
+                    "label": "Accumulation Weeks",
+                    "type": "number",
+                    "defaultValue": 52
+                },
+                {
+                    "id": "totalCapitalPerWeek",
+                    "label": "Total Capital Per Week",
+                    "type": "number",
+                    "defaultValue": 50000,
+                    "unit": "₹"
+                },
+                {
+                    "id": "withdrawAmountPerWeek",
+                    "label": "Withdraw Amount Per Week (₹)",
+                    "type": "number",
+                    "defaultValue": 5000,
+                    "unit": "₹"
+                },
+                {
+                    "id": "payoutStartWeek",
+                    "label": "Payout Start Week",
+                    "type": "number",
+                    "defaultValue": 60
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        }
+    ]
+}

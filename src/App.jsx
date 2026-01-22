@@ -10,16 +10,29 @@ import { selectCurrentPage, setCurrentPage } from './store/slices/navigationSlic
 import ChatAi1 from './Pages/ChatAi1';
 import InvestAi1 from './Pages/InvestAi1';
 import MarketsAi1 from './Pages/MarketsAi1';
+import PortfolioAnalytics from './Pages/PortfolioAnalytics';
+import MyProfile from './Components/MyProfile';
+import AppPopup from './Components/Common/AppPopup';
+import PaymentPopup from './Components/PaymentPopup';
+import { selectShowPaymentPopup, selectPaymentPlan, setPaymentPopup } from './store/slices/subscriptionSlice';
 
 
 const App = () => {
   const dispatch = useDispatch();
   const currentPage = useSelector(selectCurrentPage);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
   const showTrial = useSelector(selectShouldShowTrial); // Get from Redux
+  const showPaymentPopup = useSelector(selectShowPaymentPopup);
+  const paymentPlan = useSelector(selectPaymentPlan);
 
   const handleSetCurrentPage = (page) => {
-    dispatch(setCurrentPage(page));
+    // Handle MyProfile as popup instead of page
+    if (page === 'MyProfile') {
+      setShowProfilePopup(true);
+    } else {
+      dispatch(setCurrentPage(page));
+    }
   };
 
   const renderPage = () => {
@@ -30,6 +43,8 @@ const App = () => {
         return <InvestAi1 />;
       case 'MarketsAi1':
         return <MarketsAi1 />;
+      case 'PortfolioAnalytics':
+        return <PortfolioAnalytics />;
       default:
         return <Home onLoginClick={() => setShowLoginPopup(true)} setCurrentPage={handleSetCurrentPage} />;
     }
@@ -43,7 +58,14 @@ const App = () => {
         {renderPage()}
       </div>
       <LoginPopup isOpen={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
+      <MyProfile isOpen={showProfilePopup} onClose={() => setShowProfilePopup(false)} />
       <Trial isOpen={showTrial} onClose={() => dispatch(setShouldShowTrial(false))} />
+      <PaymentPopup
+        isOpen={showPaymentPopup}
+        onClose={() => dispatch(setPaymentPopup(false))}
+        initialPlan={paymentPlan}
+      />
+      <AppPopup />
     </div>
   );
 };

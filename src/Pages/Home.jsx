@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, selectUser, selectUserEmail } from '../store/slices/userSlice';
-import { fetchProducts, selectProducts, selectSubscriptionLoading } from '../store/slices/subscriptionSlice';
+import { fetchProducts, selectProducts, selectSubscriptionLoading, setPaymentPopup, setPaymentPlan } from '../store/slices/subscriptionSlice';
 import { getProductAccessStatus, getStatusLabel, isProductFaded } from '../utils/productAccess';
 import products from '../Data/products';
 
@@ -22,8 +22,35 @@ const Home = ({ onLoginClick, setCurrentPage }) => {
         }
     }, [isAuthenticated, user?.email, dispatch]);
 
+    // Whitelist for ChatAi1 access
+    const CHATAI_WHITELIST = [
+        'vipulkhandelwal25@gmail.com',
+        'Moneycompoundinfo@gmail.com',
+        'insurance.moneycompound@gmail.com',
+        'rachit.gour749@gmail.com',
+        'anjanr@gmail.com',
+        'iamshourya007@gmail.com'
+    ];
+
+    // Check if user has ChatAi1 access
+    const hasChatAiAccess = () => {
+        if (!isAuthenticated || !user?.email) return false;
+        return CHATAI_WHITELIST.includes(user.email);
+    };
+
     // Get product access information
     const getProductInfo = (productId) => {
+        // Special handling for ChatAi1 - check whitelist first
+        if (productId === 'chatai1') {
+            if (!isAuthenticated) {
+                return { hasAccess: false, status: 'subscribe', subscription: null };
+            }
+            // If user is not in whitelist, show as coming soon
+            if (!hasChatAiAccess()) {
+                return { hasAccess: false, status: 'coming_soon', subscription: null };
+            }
+        }
+
         // If not authenticated, return subscribe status
         if (!isAuthenticated) {
             return { hasAccess: false, status: 'subscribe', subscription: null };
@@ -56,13 +83,22 @@ const Home = ({ onLoginClick, setCurrentPage }) => {
                 setCurrentPage(pageName);
             }
         } else {
-            // If no access, show appropriate message
+            // If no access, show appropriate message or payment popup
             if (productInfo.status === 'coming_soon') {
                 alert(`${product.name} is coming soon!`);
             } else if (!isAuthenticated) {
                 onLoginClick();
             } else {
-                alert(`Please subscribe to ${product.name} to access this feature.`);
+                // Open payment popup with correct plan
+                const planIdMap = {
+                    'tradeai1': 'TradeAI',
+                    'marketsai1': 'MarketAI',
+                    'chatai1': 'ChatAI',
+                    'investai1': 'WealthAI_Combo'
+                };
+                const planId = planIdMap[product.id] || 'MarketAI';
+                dispatch(setPaymentPlan(planId));
+                dispatch(setPaymentPopup(true));
             }
         }
     };
@@ -197,8 +233,17 @@ const Home = ({ onLoginClick, setCurrentPage }) => {
                                         // Subscribe (no active subscription)
                                         return (
                                             <button
-                                                onClick={() => {
-                                                    alert(`Subscribe to ${product.name} - Payment integration coming soon!`);
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const planIdMap = {
+                                                        'tradeai1': 'TradeAI',
+                                                        'marketsai1': 'MarketAI',
+                                                        'chatai1': 'ChatAI',
+                                                        'investai1': 'WealthAI_Combo'
+                                                    };
+                                                    const planId = planIdMap[product.id] || 'MarketAI';
+                                                    dispatch(setPaymentPlan(planId));
+                                                    dispatch(setPaymentPopup(true));
                                                 }}
                                                 className="inline-block bg-[#a6824b] hover:bg-[#8f6d3e] text-white text-[10px] font-semibold px-4 py-[3px] rounded-full shadow-md transition-all duration-300 hover:shadow-lg"
                                             >

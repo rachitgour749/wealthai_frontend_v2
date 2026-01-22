@@ -1,0 +1,260 @@
+/* Professional Chat AI Response Styling */
+
+/* ============================================
+   USER MESSAGE TEXT COLOR FIX
+   ============================================ */
+
+/* Ensure user messages always have white text */
+.prose p,
+.prose strong,
+.prose em,
+.prose span {
+    color: inherit !important;
+}
+
+/* ============================================
+   TABLE STYLING - Clean, Modern Design
+   ============================================ */
+
+.prose table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    font-size: 0.8125rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: white;
+    table-layout: auto;
+}
+
+.prose thead {
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    position: relative;
+}
+
+.prose thead::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.prose thead th {
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.875rem 1rem;
+    border: none;
+    text-transform: uppercase;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.prose thead th:first-child {
+    width: auto;
+    white-space: nowrap;
+}
+
+.prose tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.prose tbody tr:last-child {
+    border-bottom: none;
+}
+
+.prose tbody tr:hover {
+    background-color: #f0fdfa;
+    transform: scale(1.01);
+}
+
+.prose tbody td {
+    padding: 0.75rem 1rem;
+    border: none;
+    color: #374151;
+    line-height: 1.5;
+    font-size: 14px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.prose tbody td:first-child {
+    font-weight: 600;
+    color: #0d9488;
+    background: linear-gradient(90deg, #f0fdfa 0%, transparent 100%);
+    width: auto;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* ============================================
+   TYPOGRAPHY ENHANCEMENTS
+   ============================================ */
+
+.prose strong {
+    font-weight: 700;
+    color: #111827;
+}
+
+.prose em {
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Headings */
+.prose h1,
+.prose h2,
+.prose h3 {
+    color: #0d9488;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.prose h1 {
+    font-size: 1.5rem;
+    border-bottom: 2px solid #14b8a6;
+    padding-bottom: 0.5rem;
+}
+
+.prose h2 {
+    font-size: 1.25rem;
+}
+
+.prose h3 {
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   LIST STYLING
+   ============================================ */
+
+.prose ul,
+.prose ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.prose li {
+    margin: 0.5rem 0;
+    line-height: 1.7;
+}
+
+.prose ul li::marker {
+    color: #14b8a6;
+    font-weight: bold;
+}
+
+/* ============================================
+   PARAGRAPH & SPACING
+   ============================================ */
+
+.prose p {
+    margin: 0.75rem 0;
+    line-height: 1.7;
+    color: #374151;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+
+.prose code {
+    background: #f3f4f6;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+    color: #0d9488;
+    font-weight: 500;
+}
+
+.prose pre {
+    background: #1f2937;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.prose pre code {
+    background: transparent;
+    color: #e5e7eb;
+    padding: 0;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+
+.prose a {
+    color: #0d9488;
+    text-decoration: underline;
+    text-decoration-color: rgba(13, 148, 136, 0.3);
+    text-underline-offset: 2px;
+    transition: all 0.2s ease;
+}
+
+.prose a:hover {
+    color: #14b8a6;
+    text-decoration-color: #14b8a6;
+}
+
+/* ============================================
+   BLOCKQUOTES
+   ============================================ */
+
+.prose blockquote {
+    border-left: 4px solid #14b8a6;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: #6b7280;
+    background: #f0fdfa;
+    padding: 0.75rem 1rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+    .prose table {
+        font-size: 0.7rem;
+    }
+
+    .prose thead th {
+        padding: 0.625rem 0.5rem;
+        font-size: 0.6rem;
+    }
+
+    .prose tbody td {
+        padding: 0.625rem 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .prose h1 {
+        font-size: 1.25rem;
+    }
+
+    .prose h2 {
+        font-size: 1.1rem;
+    }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
