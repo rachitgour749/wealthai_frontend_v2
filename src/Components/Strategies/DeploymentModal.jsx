@@ -364,21 +364,22 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                                     <label className="block text-gray-600 text-sm font-medium mb-[2px]">
                                         Webhook
                                     </label>
-                                    <select
-                                        value={webhook}
-                                        onChange={(e) => setWebhook(e.target.value)}
-                                        className="w-full px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-sm"
-                                        disabled={loading}
-                                    >
-                                        <option value="" className='text-gray-300'>
-                                            {loading ? 'Loading webhooks...' : 'Select Webhook'}
-                                        </option>
-                                        {webhooksList.map((wh, index) => (
-                                            <option key={index} value={wh.webhook_url}>
-                                                {wh.webhook_url}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            list="webhook-options"
+                                            value={webhook}
+                                            onChange={(e) => setWebhook(e.target.value)}
+                                            placeholder={loading ? 'Loading webhooks...' : 'Select or Enter Webhook URL'}
+                                            className="w-full px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-sm"
+                                            disabled={loading}
+                                        />
+                                        <datalist id="webhook-options">
+                                            {webhooksList.map((wh, index) => (
+                                                <option key={index} value={wh.webhook_url} />
+                                            ))}
+                                        </datalist>
+                                    </div>
                                 </div>
                             )}
 
@@ -525,8 +526,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                     </button>
                     <button
                         onClick={handleDeploy}
-                        disabled={loading}
-                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading
+                        disabled={loading || clients.length === 0}
+                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-wealth-800 hover:bg-wealth-900'
                             } text-white`}

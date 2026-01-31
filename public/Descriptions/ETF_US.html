@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>International ETF Strategy | MarketsAI - Powered by WealthAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f3d39;
+            --primary-light: #319795;
+            --secondary: #5bcb7f;
+            --bg-light: #e1fbe9;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --white: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a5c56 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #edf2f7;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-light);
+            border-radius: 2px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .feature-item {
+            background: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-light);
+        }
+
+        .highlight-box {
+            background: var(--bg-light);
+            border: 1px solid var(--secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--primary);
+        }
+
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: white;
+        }
+
+        .accordion-header {
+            padding: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .accordion-header.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-content-inner {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        ul li::before {
+            content: '🌐';
+            position: absolute;
+            left: 0;
+            font-size: 0.8rem;
+        }
+
+        .disclaimer {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: #f0f7ff;
+            border-radius: 12px;
+            border-left: 4px solid #3182ce;
+            font-size: 0.85rem;
+            color: #2c5282;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="hero">
+            <h1>International ETF Strategy</h1>
+            <p>Go global with your investments. This strategy focuses on diversifying your portfolio across
+                international markets through US-listed Exchange Traded Funds, capturing global growth while hedging
+                domestic risks.</p>
+        </header>
+
+        <section class="section-card">
+            <h2>Executive Summary</h2>
+            <p>The International ETF strategy provides exposure to the world's largest economy and leading global
+                corporations. It implements the same rigorous mean-reversion or momentum filters used in domestic
+                strategies, adapted for the unique liquidity and hours of international exchanges.</p>
+
+            <div class="grid" style="margin-top: 1.5rem;">
+                <div class="feature-item">
+                    <h4>Global Diversification</h4>
+                    <p>Access markets beyond India to reduce country-specific risk.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Currency Hedge</h4>
+                    <p>Benefit from potential currency appreciation alongside asset growth.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <h2>Why US ETFs?</h2>
+            <div class="highlight-box">
+                The US stock market represents over 40% of the world's equity market cap. By investing in US ETFs like
+                SPY (S&P 500), QQQ (Nasdaq), or sector-specific funds, you gain direct participation in global tech and
+                healthcare leaders.
+            </div>
+            <ul>
+                <li><strong>Unmatched Liquidity:</strong> Tight bid-ask spreads even for large volumes.</li>
+                <li><strong>Innovation Exposure:</strong> Direct access to the world's most innovative tech giants.</li>
+                <li><strong>Fractional Access:</strong> Systematic entry into premium asset classes.</li>
+            </ul>
+        </section>
+
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>Regulatory Framework (LRS)</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>Investments in international markets are governed by the RBI's Liberalised Remittance Scheme
+                            (LRS):</p>
+                        <ul style="margin-top: 1rem;">
+                            <li>Current limit is $250,000 per financial year per individual.</li>
+                            <li>TCS (Tax Collected at Source) rules apply as per the latest Finance Act.</li>
+                            <li>Reporting requirements for foreign assets in your annual Returns.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="disclaimer">
+            <strong>Note:</strong> International investing involves currency exchange risk and geopolitical
+            considerations. Tax treatment of foreign dividends and gains differs from domestic securities. Consult your
+            tax advisor.
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isActive = this.classList.contains('active');
+
+                document.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.nextElementSibling.style.maxHeight = null;
+                });
+
+                if (!isActive) {
+                    this.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS ETF Strategy | MarketsAI - Powered by WealthAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f3d39;
+            --primary-light: #319795;
+            --secondary: #5bcb7f;
+            --bg-light: #e1fbe9;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --white: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a5c56 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #edf2f7;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-light);
+            border-radius: 2px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .feature-item {
+            background: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-light);
+        }
+
+        .highlight-box {
+            background: var(--bg-light);
+            border: 1px solid var(--secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--primary);
+        }
+
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: white;
+        }
+
+        .accordion-header {
+            padding: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .accordion-header.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-content-inner {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .formula-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: var(--primary-light);
+            margin: 1rem 0;
+        }
+
+        .disclaimer {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: #fff5f5;
+            border-radius: 12px;
+            border-left: 4px solid #f56565;
+            font-size: 0.85rem;
+            color: #c53030;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="hero">
+            <h1>RS ETF Rotation Strategy</h1>
+            <p>A momentum-driven approach that identifies and holds the strongest performers from the ETF universe by
+                measuring their Relative Strength (RS) against a benchmark.</p>
+        </header>
+
+        <section class="section-card">
+            <h2>Executive Summary</h2>
+            <p>The Relative Strength strategy is rooted in the "persistence of performance" principle. It systematically
+                buys ETFs that are outperforming the broader market and sells those that lose momentum, ensuring your
+                portfolio is always aligned with market leadership.</p>
+
+            <div class="grid" style="margin-top: 1.5rem;">
+                <div class="feature-item">
+                    <h4>Momentum Focused</h4>
+                    <p>Targets high-velocity movements in the market.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Relative Performance</h4>
+                    <p>Measures strength against benchmarks, not just absolute gains.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>The RS Calculation</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>We calculate RS across multiple timeframes (1W, 1M, 3M) to identify the "Alpha" generation:
+                        </p>
+                        <div class="formula-box">
+                            RS = (ETF Return / Index Return) - 1
+                        </div>
+                        <p>A positive RS indicates outperformance, while a negative RS signals it's time to rotate into
+                            stronger candidates.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>Selection & Rebalancing</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>Our rebalancing engine runs weekly on Friday signals:</p>
+                        <ul style="margin: 1rem 0; list-style: circle; padding-left: 1.5rem;">
+                            <li>Ranking ETFs based on composite Alpha scores.</li>
+                            <li>Buying the top 'N' performers.</li>
+                            <li>Exiting any position that falls out of the leadership rank.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="disclaimer">
+            <strong>Disclaimer:</strong> This strategy involves momentum risk. Past performance does not guarantee
+            future results. WealthAI tools are for informational purposes only.
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isActive = this.classList.contains('active');
+
+                document.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.nextElementSibling.style.maxHeight = null;
+                });
+
+                if (!isActive) {
+                    this.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

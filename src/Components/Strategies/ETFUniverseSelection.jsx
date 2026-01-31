@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ETFUniverseSelection = ({ title, subtitle, options, selectedOptions, onChange }) => {
+const ETFUniverseSelection = ({ title, subtitle, options, selectedOptions, onChange, placeholder, onBestCombinationsClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -66,8 +66,26 @@ const ETFUniverseSelection = ({ title, subtitle, options, selectedOptions, onCha
 
     return (
         <div className="bg-[#defff3] p-4 rounded-xl border border-[#9fddd2] min-h-[120px] md:min-h-[140px] flex flex-col shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.1)]" ref={wrapperRef}>
-            <h2 className="text-sm md:text-lg font-bold text-wealth-800 mb-0.5">ETF Universe Selection</h2>
-            <p className="text-gray-500 text-[10px] md:text-[12px] mb-2">{subtitle}</p>
+            <div className="flex items-center justify-between mb-0.5">
+                <div>
+                    <h2 className="text-sm md:text-lg font-bold text-wealth-800">{title}</h2>
+                    <p className="text-gray-500 text-[10px] md:text-[12px]">{subtitle}</p>
+                    <p className="text-[#0f3d39] text-[12px] md:text-[12px] font-medium mt-1">
+                        Please Select Minimum 5 Symbols for run backtest
+                    </p>
+                </div>
+                {onBestCombinationsClick && (
+                    <button
+                        onClick={onBestCombinationsClick}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0f3d39] text-white text-[12px] font-bold rounded-lg hover:bg-[#1a5c56] transition-all duration-200 shadow-sm whitespace-nowrap"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                        Best Combinations
+                    </button>
+                )}
+            </div>
 
             <div className="relative flex flex-col">
                 {/* Search Container - grows with content */}
@@ -96,7 +114,7 @@ const ETFUniverseSelection = ({ title, subtitle, options, selectedOptions, onCha
 
                     <input
                         type="text"
-                        placeholder={safeSelected.length > 0 ? "" : "Select ETFs..."}
+                        placeholder={safeSelected.length > 0 ? "" : `${placeholder}...`}
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);

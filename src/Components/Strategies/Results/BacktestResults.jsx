@@ -33,18 +33,10 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
     const saveStatus = useSelector(selectSaveStatus);
 
     useEffect(() => {
-        const getTradesCount = async () => {
+        const calculateTrades = () => {
             try {
-                // If it's already in results, use it
-                let log = results.transaction_log;
-
-                // If not, fetch it (consistent with TradesTransactions.js logic)
-                if (!log && results.strategy_type) {
-                    const response = await strategyService.fetchCachedTransactionLog(results.strategy_type);
-                    log = Array.isArray(response) ? response : (response?.transaction_log || response?.data || []);
-                }
-
-                if (log && Array.isArray(log)) {
+                const log = results.transaction_log || [];
+                if (Array.isArray(log)) {
                     const count = log.reduce((acc, row) => {
                         const action = (row.action || '').toLowerCase();
                         if (action === 'churn') {
@@ -58,7 +50,7 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
                 console.error('Error calculating total trades:', err);
             }
         };
-        if (results) getTradesCount();
+        if (results) calculateTrades();
     }, [results]);
 
     if (!results) return null;
@@ -66,10 +58,19 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
     const { metrics, performance_data, strategy_type } = results;
 
     // Inject calculated total trades into metrics if it's missing or use it for the card
+    const totalTrades = calculatedTotalTrades !== null ? calculatedTotalTrades : (metrics['Total Trades'] || metrics['total_trades'] || (metrics.strategy && (metrics.strategy['Total Trades'] || metrics.strategy['total_trades'])));
+
     const enrichedMetrics = {
         ...metrics,
-        'Total Trades': calculatedTotalTrades !== null ? calculatedTotalTrades : (metrics['Total Trades'] || metrics['total_trades'])
+        'Total Trades': totalTrades
     };
+
+    if (enrichedMetrics.strategy) {
+        enrichedMetrics.strategy = {
+            ...enrichedMetrics.strategy,
+            'Total Trades': totalTrades
+        };
+    }
 
     const handleSaveStrategy = async (strategyName) => {
         if (!user) {

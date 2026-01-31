@@ -30,7 +30,10 @@ import AvailableETFs from './AvailableETFs';
 import StrategyParameters from './StrategyParameters';
 import BacktestResults from './Results/BacktestResults';
 import SavedInstancesModal from './SavedInstancesModal';
+import BestCombinationsModal from './BestCombinationsModal';
+import StrategyDescriptionModal from './StrategyDescriptionModal';
 import strategyService from '../../api/services/strategyService';
+import { bestCombinations } from '../../Data/bestCombinations';
 
 const StrategyTemplate = ({ strategyId, onBack }) => {
     const [config, setConfig] = useState(null);
@@ -42,6 +45,8 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
     const [loading, setLoading] = useState(true);
     const [backtestPayload, setBacktestPayload] = useState(null);
     const [isInstancesModalOpen, setIsInstancesModalOpen] = useState(false);
+    const [isBestCombinationsModalOpen, setIsBestCombinationsModalOpen] = useState(false);
+    const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [backtestStarted, setBacktestStarted] = useState(false);
     const [useCustomDate, setUseCustomDate] = useState(false);
     const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
@@ -143,10 +148,18 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     }
 
                     // Decide which one has details (sector, years)
+                    // Decide which one has details (sector, years)
                     const hasDetails = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].sector || arr[0].years_available || arr[0].years);
+                    const hasYears = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].years_available !== undefined || arr[0].years !== undefined);
+                    const hasSector = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].sector || arr[0].industry || arr[0].group);
 
                     let bestSourceForTable = rawAssets;
-                    if (!hasDetails(rawAssets) && hasDetails(rawOverview)) {
+                    // Prefer overview if it has better data (years or sector) than assets
+                    if (
+                        (hasYears(rawOverview) && !hasYears(rawAssets)) ||
+                        (hasSector(rawOverview) && !hasSector(rawAssets)) ||
+                        (!hasDetails(rawAssets) && hasDetails(rawOverview))
+                    ) {
                         bestSourceForTable = rawOverview;
                     }
 
@@ -164,18 +177,11 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     // If rawOverview is empty, fallback to rawAssets symbols
                     let normalizedOverview = rawOverview.map(item => getSymbol(item)).filter(s => s !== '');
                     if (normalizedOverview.length === 0 && normalizedAssets.length > 0) {
-                        console.log('[StrategyTemplate] rawOverview empty, falling back to symbols from rawAssets');
                         normalizedOverview = normalizedAssets.map(a => a.symbol).filter(s => s && s !== '-');
                     }
-
-                    console.log('[StrategyTemplate] Normalized Assets for Table:', normalizedAssets.length);
-                    console.log('[StrategyTemplate] Normalized Overview for Selection:', normalizedOverview.length);
-                    console.log('[StrategyTemplate] Sample Overview:', normalizedOverview.slice(0, 5));
-
                     setAvailableETFs(normalizedAssets);
                     setUniverseOptions(normalizedOverview);
                 } catch (error) {
-                    console.error('[StrategyTemplate] Error fetching strategy data:', error);
                     setAvailableETFs(strategy.available_etfs || []);
                     setUniverseOptions(strategy.universe_selection.options || []);
                     setSelectedETFs([]); // Initialize with empty selection instead of slice(0, 2)
@@ -227,7 +233,18 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
     }, [config, selectedETFs]);
 
     const handleParamChange = (id, value) => {
-        setParamValues(prev => ({ ...prev, [id]: value }));
+        setParamValues(prev => {
+            const next = { ...prev, [id]: value };
+
+            // Special logic for ETF_Payout: If withdrawAmountPerWeek is 0, payoutStartWeek should be 0
+            if (config?.strategy_type === 'ETF_Payout') {
+                if (id === 'withdrawAmountPerWeek' && Number(value) === 0) {
+                    next.payoutStartWeek = 0;
+                }
+            }
+
+            return next;
+        });
         setBacktestStarted(false); // Reset backtest state on change
     };
 
@@ -245,6 +262,20 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
         dispatch(setViewMode('config'));
         setBacktestStarted(false);
         setBacktestPayload(null);
+
+        // Reset inputs
+        setSelectedETFs([]);
+        setUseCustomDate(false);
+        setCustomDateRange({ start: '', end: '' });
+
+        // Reset parameters to defaults
+        if (config && config.parameters) {
+            const initialParams = {};
+            config.parameters.forEach(p => {
+                initialParams[p.id] = p.defaultValue;
+            });
+            setParamValues(initialParams);
+        }
     };
 
     const handleCancelBacktest = () => {
@@ -317,8 +348,89 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
         }));
     };
 
+    const handleLoadCombination = (combination) => {
+        // Close modal
+        setIsBestCombinationsModalOpen(false);
+
+        // Set tickers
+        setSelectedETFs(combination.tickers);
+
+        // Set date range
+        if (combination.startDate && combination.endDate) {
+            setUseCustomDate(true);
+            setCustomDateRange({
+                start: combination.startDate,
+                end: combination.endDate
+            });
+        }
+
+        // Set parameters
+        if (combination.parameters) {
+            const newValues = { ...paramValues };
+            Object.keys(combination.parameters).forEach(key => {
+                newValues[key] = combination.parameters[key];
+            });
+            setParamValues(newValues);
+        }
+
+        // Reset backtest state
+        setBacktestStarted(false);
+        dispatch(resetBacktest());
+
+        // Show success notification
+        dispatch(showNotification({
+            message: `Applied combination: ${combination.name}`,
+            type: 'success'
+        }));
+    };
+
     const handleRunBacktest = async () => {
         if (!config) return;
+
+        // Validations
+        // 1. Minimum 5 ETFs requirement
+        if (selectedETFs.length < 5) {
+            dispatch(showNotification({
+                message: 'It is mandatory to select at least 5 symbols to run a backtest.',
+                type: 'warning'
+            }));
+            return;
+        }
+
+        // 2. Strategy specific validations
+        const accWeeks = Number(paramValues.accumulationWeeks);
+        if (['ETF_Rotation', 'International_ETF_Rotation', 'Stock_Rotation', 'ETF_Payout'].includes(config.strategy_type)) {
+            if (accWeeks < 10) {
+                dispatch(showNotification({
+                    message: 'Accumulation Weeks cannot be less than 10.',
+                    type: 'warning'
+                }));
+                return;
+            }
+        }
+
+        if (config.strategy_type === 'ETF_Payout') {
+            const payoutWeek = Number(paramValues.payoutStartWeek);
+            const withdrawAmount = Number(paramValues.withdrawAmountPerWeek);
+            if (withdrawAmount > 0 && payoutWeek <= accWeeks) {
+                dispatch(showNotification({
+                    message: `Payout Start Week (${payoutWeek}) must be greater than Accumulation Weeks (${accWeeks}).`,
+                    type: 'warning'
+                }));
+                return;
+            }
+        }
+
+        if (config.strategy_type === 'RS_ETF_Rotation') {
+            const noOfPositions = Number(paramValues.noOfPositions);
+            if (noOfPositions > selectedETFs.length) {
+                dispatch(showNotification({
+                    message: `No. of Positions (${noOfPositions}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`,
+                    type: 'warning'
+                }));
+                return;
+            }
+        }
 
         // Cleanup any existing controller
         if (abortControllerRef.current) {
@@ -351,7 +463,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             };
 
             // Strategy-Specific Mappings
-            if (config.strategy_type === 'ETF_Rotation' || config.strategy_type === 'International_ETF_Rotation') {
+            if (config.strategy_type === 'ETF_Rotation' || config.strategy_type === 'International_ETF_Rotation' || config.strategy_type === 'Stock_Rotation') {
                 payload.capital_per_week = Number(paramValues.totalCapitalPerWeek);
                 payload.accumulation_weeks = Number(paramValues.accumulationWeeks);
             } else if (config.strategy_type === 'ETF_Payout') {
@@ -454,6 +566,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     onBack={onBack}
                     instancesCount={instancesCount}
                     onInstancesClick={() => setIsInstancesModalOpen(true)}
+                    onInfoClick={() => setIsDescriptionModalOpen(true)}
                 />
             )}
 
@@ -486,9 +599,12 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                                 options={universeOptions}
                                 selectedOptions={selectedETFs}
                                 onChange={handleETFChange}
+                                placeholder={config.universe_selection.placeholder}
+                                onBestCombinationsClick={() => setIsBestCombinationsModalOpen(true)}
                             />
                             <AvailableETFs
                                 etfs={availableETFs}
+                                subName={config.universe_selection.subName}
                             />
                         </div>
 
@@ -504,6 +620,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                                 onCancelBacktest={handleCancelBacktest}
                                 backtestStatus={backtestStatus}
                                 useCustomDate={useCustomDate}
+                                isBacktestDisabled={selectedETFs.length < 5}
                                 onUseCustomDateChange={(val) => {
                                     setUseCustomDate(val);
                                     setBacktestStarted(false);
@@ -524,6 +641,21 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                 loading={instancesStatus === 'loading'}
                 onRefresh={fetchInstances}
                 onLoadInstance={handleLoadInstance}
+            />
+
+            <BestCombinationsModal
+                isOpen={isBestCombinationsModalOpen}
+                onClose={() => setIsBestCombinationsModalOpen(false)}
+                combinations={bestCombinations.filter(c => c.strategy_type === config.strategy_type)}
+                onLoadCombination={handleLoadCombination}
+                strategyType={config.strategy_type}
+                strategyConfig={config}
+            />
+
+            <StrategyDescriptionModal
+                isOpen={isDescriptionModalOpen}
+                onClose={() => setIsDescriptionModalOpen(false)}
+                strategyId={strategyId}
             />
         </div>
     );

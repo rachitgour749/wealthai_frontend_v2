@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '../../../utils/formatUtils';
 import TradesTransactions from './TradesTransactions';
 import CostAnalysis from './CostAnalysis';
 
@@ -22,18 +23,26 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
 
     const formatVal = (val, isPct = false, isCurrency = false) => {
         if (val === undefined || val === null) return '-';
+        if (isCurrency) return formatCurrency(val, currencySymbol);
+
         if (typeof val === 'number') {
             if (isPct) return `${val.toFixed(2)}%`;
-            if (isCurrency) return `${currencySymbol}${Math.round(val).toLocaleString()}`;
             return val.toFixed(2);
         }
+
+        // Try parsing string percentages if needed, otherwise return as is
         return val;
     };
 
-    const benchmark = metrics.benchmark_metrics || {};
+    // Handle both old and new API response structures
+    // New structure: metrics.strategy and metrics.benchmark
+    // Old structure: metrics at top level, benchmark_metrics separate
+    const strategyMetrics = metrics.strategy || metrics;
+    const benchmarkMetrics = metrics.benchmark || metrics.benchmark_metrics || {};
+
     console.log('[ResultTabs] Full metrics object:', metrics);
-    console.log('[ResultTabs] Benchmark metrics:', benchmark);
-    console.log('[ResultTabs] Benchmark keys:', Object.keys(benchmark));
+    console.log('[ResultTabs] Strategy metrics:', strategyMetrics);
+    console.log('[ResultTabs] Benchmark metrics:', benchmarkMetrics);
 
     // Helper to format labels from keys (e.g., cagr_pct -> CAGR)
     const prettifyKey = (key) => {
@@ -41,6 +50,7 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
             'total_return': 'Total Return',
             'total_return_pct': 'Total Return',
             'cagr_pct': 'CAGR',
+            'cagr': 'CAGR',
             'xirr_pct': 'XIRR',
             'sharpe_ratio': 'Sharpe Ratio',
             'max_drawdown': 'Max Drawdown',
@@ -49,94 +59,37 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
             'final_value': 'Final Value',
             'total_trades': 'Total Trades',
             'sortino_ratio': 'Sortino Ratio',
+            'calmar_ratio': 'Calmar Ratio',
         };
         if (labels[key.toLowerCase()]) return labels[key.toLowerCase()];
         return key.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     };
 
-    // Dynamically build comparison pairs from whatever keys the API provides
+    // Dynamically build comparison pairs based on fixed ordered list
     const getComparisonPairs = () => {
-        const excludedMetrics = [
-            'volatility',
-            'beta',
-            'total_weeks',
-            'total_week',
-            'totalweeks',
-            'win_rate',
-            'win_rate_pct',
-            'treynor_ratio',
-            'total_trades',
-            'total_trade'
+        const orderedRows = [
+            { label: 'Total Investment', strategyKeys: ['total_investment'], benchmarkKeys: ['total_investment'], isCurrency: true },
+            { label: 'Final Value', strategyKeys: ['final_value', 'final_capital'], benchmarkKeys: ['final_value', 'final_capital'], isCurrency: true },
+            { label: 'Total Return', strategyKeys: ['total_return_pct', 'total_return'], benchmarkKeys: ['total_return_pct', 'total_return'], isPct: true },
+            { label: 'CAGR', strategyKeys: ['cagr', 'cagr_pct'], benchmarkKeys: ['cagr', 'cagr_pct'], isPct: true },
+            { label: 'Sharpe Ratio', strategyKeys: ['sharpe_ratio'], benchmarkKeys: ['sharpe_ratio'] },
+            { label: 'Calmar Ratio', strategyKeys: ['calmar_ratio'], benchmarkKeys: ['calmar_ratio'] },
+            { label: 'Max Drawdown', strategyKeys: ['max_drawdown_pct', 'max_drawdown'], benchmarkKeys: ['max_drawdown_pct', 'max_drawdown'], isPct: true }
         ];
 
-        const keys = Object.keys(metrics).filter(k => {
-            if (typeof metrics[k] === 'object' || k === 'benchmark_metrics') return false;
+        return orderedRows.map(row => {
+            // Find the first available key in strategy metrics
+            const strategyKey = row.strategyKeys.find(k => strategyMetrics[k] !== undefined);
+            const strategyVal = strategyKey ? strategyMetrics[strategyKey] : undefined;
 
-            // Normalize key for comparison (lowercase and replace spaces with underscores)
-            const normalizedKey = k.toLowerCase().replace(/ /g, '_');
-            return !excludedMetrics.includes(normalizedKey);
-        });
-
-        if (keys.length === 0) return [];
-
-        return keys.map(key => {
-            const label = prettifyKey(key);
-            const strategyVal = metrics[key];
-
-            // Create a comprehensive mapping from strategy keys to benchmark keys
-            // Handle both snake_case and human-readable formats
-            const strategyToBenchmarkMap = {
-                // Human-readable keys (from API)
-                'Total Return': 'total_return_pct',
-                'CAGR': 'cagr_pct',
-                'XIRR': 'xirr_pct',
-                'Max Drawdown': 'max_drawdown_pct',
-                'Sharpe Ratio': 'sharpe_ratio',
-                'Final Value': 'final_value',
-                'Sortino Ratio': 'sortino_ratio',
-                'Calmar Ratio': 'calmar_ratio',
-                'Volatility': 'volatility_pct',
-                'Total Investment': 'total_investment',
-                'Total Trades': 'total_trades',
-
-                // Snake_case keys (fallback)
-                'total_return': 'total_return_pct',
-                'total_return_pct': 'total_return_pct',
-                'cagr': 'cagr_pct',
-                'cagr_pct': 'cagr_pct',
-                'xirr': 'xirr_pct',
-                'xirr_pct': 'xirr_pct',
-                'max_drawdown': 'max_drawdown_pct',
-                'max_drawdown_pct': 'max_drawdown_pct',
-                'sharpe_ratio': 'sharpe_ratio',
-                'final_capital': 'final_value',
-                'final_value': 'final_value',
-                'sortino_ratio': 'sortino_ratio',
-                'calmar_ratio': 'calmar_ratio',
-                'volatility': 'volatility_pct',
-                'volatility_pct': 'volatility_pct'
-            };
-
-            // Try to find the benchmark key using the mapping
-            const benchmarkKey = strategyToBenchmarkMap[key] || key;
-            const benchVal = benchmark[benchmarkKey];
-
-            console.log(`[ResultTabs] Mapping "${key}" -> "${benchmarkKey}" = ${benchVal}`);
-
-            const isPct = key.toLowerCase().includes('pct') ||
-                key.toLowerCase().includes('return') ||
-                key.toLowerCase().includes('drawdown') ||
-                key.toLowerCase().includes('rate') ||
-                benchmarkKey.includes('pct');
-
-            const isCurrency = key.toLowerCase().includes('capital') ||
-                key.toLowerCase().includes('value') ||
-                key.toLowerCase().includes('amount');
+            // Find the first available key in benchmark metrics
+            const benchmarkKey = row.benchmarkKeys.find(k => benchmarkMetrics[k] !== undefined);
+            const benchVal = benchmarkKey ? benchmarkMetrics[benchmarkKey] : undefined;
 
             return {
-                label,
-                strategy: formatVal(strategyVal, isPct, isCurrency),
-                benchmark: formatVal(benchVal, isPct, isCurrency)
+                label: row.label,
+                strategy: formatVal(strategyVal, row.isPct, row.isCurrency),
+                benchmark: formatVal(benchVal, row.isPct, row.isCurrency)
             };
         });
     };
@@ -182,7 +135,7 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
                                     <tr className="border-b-2 border-gray-200">
                                         <th className=" py-4 text-[12px] uppercase text-gray-600 font-medium tracking-widest">Parameter</th>
                                         <th className=" py-4 text-[12px] uppercase text-gray-600 font-medium tracking-widest bg-gray-50/30">{strategyName}</th>
-                                        <th className=" py-4 text-[12px] uppercase text-gray-600 font-medium tracking-widest bg-gray-50/30">Benchmark</th>
+                                        <th className=" py-4 text-[12px] uppercase text-gray-600 font-medium tracking-widest bg-gray-50/30">{results.benchmark_name || 'Benchmark'}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -201,13 +154,19 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
 
                 {activeTab === 'trades' && (
                     <div className="animate-[fadeIn_0.3s_ease-out]">
-                        <TradesTransactions strategyType={strategyType || results.strategy_type} />
+                        <TradesTransactions
+                            strategyType={strategyType || results.strategy_type}
+                            transactions={results.transaction_log || []}
+                        />
                     </div>
                 )}
 
                 {activeTab === 'costs' && (
                     <div className="animate-[fadeIn_0.3s_ease-out]">
-                        <CostAnalysis strategyType={strategyType || results.strategy_type} />
+                        <CostAnalysis
+                            strategyType={strategyType || results.strategy_type}
+                            costs={results.cost_breakdown || results.costs_breakdown || []}
+                        />
                     </div>
                 )}
             </div>

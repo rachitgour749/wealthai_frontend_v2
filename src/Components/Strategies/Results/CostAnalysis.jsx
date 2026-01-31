@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { formatCurrency } from '../../../utils/formatUtils';
 import strategyService from '../../../api/services/strategyService';
 
-const CostAnalysis = ({ strategyType }) => {
+const CostAnalysis = ({ strategyType, costs = [] }) => {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const getCurrencySymbol = (type) => {
         const t = (type || '').toLowerCase();
@@ -14,15 +15,10 @@ const CostAnalysis = ({ strategyType }) => {
     const currencySymbol = getCurrencySymbol(strategyType);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const processData = () => {
             try {
                 setLoading(true);
-                console.log(`[CostAnalysis] Fetching data for: ${strategyType}`);
-                const response = await strategyService.fetchCachedCostsBreakdown(strategyType);
-                console.log('[CostAnalysis] Raw Response:', response);
-
-                // Handle both direct array and object-with-years formats
-                let rawData = Array.isArray(response) ? response : (response?.costs_breakdown || response?.breakdown || response?.data || []);
+                let rawData = costs;
 
                 // If it's an object where keys are years (e.g., { "2021": {...}, ... })
                 if (typeof rawData === 'object' && !Array.isArray(rawData)) {
@@ -33,18 +29,22 @@ const CostAnalysis = ({ strategyType }) => {
                 }
 
                 // Sort by year
-                const sortedResults = rawData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-                console.log('[CostAnalysis] Processed Results:', sortedResults);
+                const sortedResults = (rawData || []).sort((a, b) => parseInt(a.year) - parseInt(b.year));
 
                 setData(sortedResults);
             } catch (error) {
-                console.error('Error fetching costs:', error);
+                console.error('Error processing costs:', error);
             } finally {
                 setLoading(false);
             }
         };
-        if (strategyType) fetchData();
-    }, [strategyType]);
+
+        if (costs) {
+            processData();
+        } else {
+            setData([]);
+        }
+    }, [costs]);
 
     const downloadExcel = () => {
         if (!data.length) return;
@@ -116,9 +116,9 @@ const CostAnalysis = ({ strategyType }) => {
                         {data.map((row, idx) => (
                             <tr key={idx} className="hover:bg-teal-50/10 transition-colors">
                                 <td className="py-2 px-6 text-[12px] font-medium text-gray-600 text-center">{row.year || row.Year}</td>
-                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{currencySymbol}{(Number(row.capital_gains_tax || row.transaction_costs || row.GovtTaxes || 0)).toLocaleString()}</td>
-                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{currencySymbol}{(Number(row.total_brokerage || row.brokerage || row.Brokerage || 0)).toLocaleString()}</td>
-                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{currencySymbol}{(Number(row.total_costs || row.TotalCosts || 0)).toLocaleString()}</td>
+                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{formatCurrency(row.capital_gains_tax || row.transaction_costs || row.GovtTaxes || 0, currencySymbol)}</td>
+                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{formatCurrency(row.total_brokerage || row.brokerage || row.Brokerage || 0, currencySymbol)}</td>
+                                <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{formatCurrency(row.total_costs || row.TotalCosts || 0, currencySymbol)}</td>
                                 <td className="py-2 px-6 text-[12px] font-medium text-gray-600 text-center">{row.transactions || row.Transactions}</td>
                             </tr>
                         ))}
@@ -126,9 +126,9 @@ const CostAnalysis = ({ strategyType }) => {
                     <tfoot className="bg-gray-50/50">
                         <tr className="border-t-2 border-gray-100">
                             <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center uppercase tracking-tight">Total</td>
-                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{currencySymbol}{totals.taxes.toLocaleString()}</td>
-                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{currencySymbol}{totals.brokerage.toLocaleString()}</td>
-                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{currencySymbol}{totals.costs.toLocaleString()}</td>
+                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{formatCurrency(totals.taxes, currencySymbol)}</td>
+                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{formatCurrency(totals.brokerage, currencySymbol)}</td>
+                            <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{formatCurrency(totals.costs, currencySymbol)}</td>
                             <td className="py-4 px-6 text-[13px] font-bold text-gray-800 text-center">{totals.transactions}</td>
                         </tr>
                     </tfoot>

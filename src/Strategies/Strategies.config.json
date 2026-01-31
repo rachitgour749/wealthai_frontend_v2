@@ -7,7 +7,9 @@
             "strategy_type": "International_ETF_Rotation",
             "universe_selection": {
                 "title": "ETF Universe Selection",
-                "subtitle": "Choose ETFs for rotation strategy"
+                "subtitle": "Choose ETFs for rotation strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
             },
             "parameters": [
                 {
@@ -18,7 +20,7 @@
                 },
                 {
                     "id": "totalCapitalPerWeek",
-                    "label": "Total Capital Per Week ($)",
+                    "label": "Total Capital Per Week",
                     "type": "number",
                     "defaultValue": 50000,
                     "unit": "$"
@@ -55,13 +57,54 @@
             ]
         },
         {
+            "id": "Stock",
+            "name": "Stock Rotation",
+            "description": "Mean Reversion & Low Volatility Stocks rotation strategy",
+            "strategy_type": "Stock_Rotation",
+            "universe_selection": {
+                "title": "Stock Universe Selection",
+                "subtitle": "Choose Stocks for rotation strategy",
+                "placeholder": "Select Stocks...",
+                "subName": "Stocks"
+            },
+            "parameters": [
+                {
+                    "id": "accumulationWeeks",
+                    "label": "Accumulation Weeks",
+                    "type": "number",
+                    "defaultValue": 52
+                },
+                {
+                    "id": "totalCapitalPerWeek",
+                    "label": "Total Capital Per Week",
+                    "type": "number",
+                    "defaultValue": 50000,
+                    "unit": "₹"
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        },
+        {
             "id": "ETF",
             "name": "ETF Rotation",
             "description": "Mean Reversion & Low Volatility ETFs rotation strategy",
             "strategy_type": "ETF_Rotation",
             "universe_selection": {
                 "title": "ETF Universe Selection",
-                "subtitle": "Choose ETFs for rotation strategy"
+                "subtitle": "Choose ETFs for rotation strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
             },
             "parameters": [
                 {
@@ -98,7 +141,9 @@
             "strategy_type": "RS_ETF_Rotation",
             "universe_selection": {
                 "title": "ETF Universe Selection",
-                "subtitle": "Choose ETFs for relative strength strategy"
+                "subtitle": "Choose ETFs for relative strength strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
             },
             "parameters": [
                 {
@@ -109,9 +154,10 @@
                 },
                 {
                     "id": "totalCapital",
-                    "label": "Total Capital (₹)",
+                    "label": "Total Capital",
                     "type": "number",
-                    "defaultValue": 50000
+                    "defaultValue": 50000,
+                    "unit": "₹"
                 },
                 {
                     "id": "stopLoss",
@@ -152,7 +198,9 @@
             "strategy_type": "ETF_Payout",
             "universe_selection": {
                 "title": "ETF Universe Selection",
-                "subtitle": "Choose ETFs for payout focus strategy"
+                "subtitle": "Choose ETFs for payout focus strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
             },
             "parameters": [
                 {
@@ -170,7 +218,7 @@
                 },
                 {
                     "id": "withdrawAmountPerWeek",
-                    "label": "Withdraw Amount Per Week (₹)",
+                    "label": "Withdraw Amount Per Week",
                     "type": "number",
                     "defaultValue": 5000,
                     "unit": "₹"

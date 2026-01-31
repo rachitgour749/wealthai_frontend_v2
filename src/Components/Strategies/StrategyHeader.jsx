@@ -1,6 +1,6 @@
 import React from 'react';
 
-const StrategyHeader = ({ name, onBack, instancesCount = 0, onInstancesClick }) => {
+const StrategyHeader = ({ name, onBack, instancesCount = 0, onInstancesClick, onInfoClick }) => {
     return (
         <div className="bg-gradient-to-r from-wealth-800 to-wealth-900 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl flex justify-between items-center shadow-lg">
 
@@ -16,7 +16,10 @@ const StrategyHeader = ({ name, onBack, instancesCount = 0, onInstancesClick }) 
             </button>
             <div className="flex items-center gap-1 md:gap-2">
                 <h1 className="text-sm md:text-xl font-bold">{name}</h1>
-                <button className="text-white/70 hover:text-white">
+                <button
+                    onClick={onInfoClick}
+                    className="text-white/70 hover:text-white transition-colors"
+                >
                     <svg className="w-3.5 md:w-4 h-3.5 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

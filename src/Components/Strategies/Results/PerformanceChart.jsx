@@ -9,6 +9,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { formatDate } from '../../../utils/dateUtils';
+import { formatCurrency } from '../../../utils/formatUtils';
 
 const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategyType }) => {
     const [visibility, setVisibility] = useState({
@@ -26,8 +27,9 @@ const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategy
     const benchmarkName = isUS ? 'S&P 500 Buy & Hold' : 'NIFTY50 Buy & Hold';
 
     // Transform data for Recharts
+    console.log('[PerformanceChart] Rx Data:', performanceData);
     const data = performanceData.dates.map((date, index) => {
-        const strategyVal = performanceData.etf_strategy?.[index] || performanceData.rs_strategy?.[index] || 0;
+        const strategyVal = performanceData.strategy?.[index] || 0;
         const benchmarkVal = performanceData.benchmark_buyhold?.[index] || 0;
         const investmentVal = performanceData.cumulative_investment?.[index] || 0;
 
@@ -35,7 +37,7 @@ const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategy
         // Note: For simplicity, we just use the raw values if they are the first ones
         let processedStrategy = strategyVal;
         if (index > 0) {
-            const prevStrategy = performanceData.etf_strategy?.[index - 1] || performanceData.rs_strategy?.[index - 1] || 0;
+            const prevStrategy = performanceData.strategy?.[index - 1] || 0;
             if (prevStrategy > 0 && strategyVal > prevStrategy * 3) {
                 processedStrategy = prevStrategy; // Cap at previous value to avoid chart flattening
             }
@@ -58,7 +60,7 @@ const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategy
                         <div key={index} className="flex items-center justify-between gap-4 text-[11px] mb-1">
                             <span className="font-medium uppercase tracking-tighter" style={{ color: entry.color }}>{entry.name}:</span>
                             <span className="font-medium text-[#0f3d39]">
-                                {currencySymbol}{Math.round(entry.value).toLocaleString(isUS ? 'en-US' : 'en-IN')}
+                                {formatCurrency(entry.value, currencySymbol)}
                             </span>
                         </div>
                     ))}
@@ -112,18 +114,6 @@ const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategy
                 </div>
 
                 <div className="flex flex-wrap gap-x-5 gap-y-2 bg-gray-50/80 p-4 rounded-xl border-2 border-white shadow-inner">
-                    <CheckboxLabel
-                        label={strategyName}
-                        color="#1f77b4"
-                        checked={visibility.strategy}
-                        onChange={() => toggleLine('strategy')}
-                    />
-                    <CheckboxLabel
-                        label="Cumulative Investment"
-                        color="#ff7f0e"
-                        checked={visibility.investment}
-                        onChange={() => toggleLine('investment')}
-                    />
                     <CheckboxLabel
                         label={benchmarkName}
                         color="#d62728"

@@ -13,6 +13,7 @@ import ETF_Payout from '../Strategies/ETF_Payout'
 import ETF_US from '../Strategies/ETF_US'
 import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
+import Stock from '../Strategies/Stock'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -38,6 +39,8 @@ const MarketsAi1 = () => {
     switch (currentStrategy) {
       case 'etf-strategy':
         return <ETF onBack={handleBackToStrategies} />
+      case 'stock-strategy':
+        return <Stock onBack={handleBackToStrategies} />
       case 'RS-ETF-strategy':
         return <RS_ETF onBack={handleBackToStrategies} />
       case 'etf-strategy-payout':

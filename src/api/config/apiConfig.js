@@ -15,12 +15,12 @@ export const API_ENDPOINTS = {
     PRODUCTS: (email) => `/api/subscription/products/${email}`,
 
     // Strategies
-    ASSETS: (strategyType) => `/api/assets?strategy_type=${strategyType}`,
-    ASSETS_OVERVIEW: (strategyType) => `/api/assets/overview?strategy_type=${strategyType}`,
-    DATE_RANGE: '/api/date-range',
+    ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,
+    ASSETS_OVERVIEW: (strategyType) => `/api/strategy/assets/overview?strategy_type=${strategyType}`,
+    DATE_RANGE: '/api/strategy/date-range',
     RUN_BACKTEST: '/api/run_backtest',
-    CACHED_TRANSACTION_LOG: (strategyType) => `/api/cached-transaction-log?strategy_type=${strategyType}`,
-    CACHED_COSTS_BREAKDOWN: (strategyType) => `/api/cached-costs-breakdown?strategy_type=${strategyType}`,
+    CACHED_TRANSACTION_LOG: (strategyType) => `/api/strategy/transaction-log?strategy_type=${strategyType}`,
+    CACHED_COSTS_BREAKDOWN: (strategyType) => `/api/strategy/costs-breakdown?strategy_type=${strategyType}`,
     SAVE_STRATEGY: '/api/save_strategies',
     GET_INSTANCES: (userId, strategyType) => `/api/get_instances?user_id=${userId}&strategy_type=${strategyType}`,
     RESTART_STRATEGY: (runId) => `/api/restart_strategy?run_id=${runId}`,

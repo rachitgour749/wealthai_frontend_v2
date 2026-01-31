@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { formatCurrency } from '../../../utils/formatUtils';
 import strategyService from '../../../api/services/strategyService';
 
-const TradesTransactions = ({ strategyType }) => {
+const TradesTransactions = ({ strategyType, transactions = [] }) => {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const getCurrencySymbol = (type) => {
         const t = (type || '').toLowerCase();
@@ -14,21 +15,13 @@ const TradesTransactions = ({ strategyType }) => {
     const currencySymbol = getCurrencySymbol(strategyType);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const processData = () => {
             try {
                 setLoading(true);
-                console.log(`[TradesTransactions] Fetching data for: ${strategyType}`);
-                const response = await strategyService.fetchCachedTransactionLog(strategyType);
-                console.log('[TradesTransactions] Raw Response:', response);
-
-                // Handle different response formats (direct array or { transaction_log: [...] } or { data: [...] })
-                const results = Array.isArray(response) ? response : (response?.transaction_log || response?.data || []);
-                console.log('[TradesTransactions] Processed Results:', results);
-
-                // Process the raw data into a display-friendly format
-                const processed = results.map(row => {
+                // Process the passed data into a display-friendly format
+                const processed = transactions.map(row => {
                     const action = (row.action || '').toLowerCase();
-                    const dateStr = row.execution_date || row.signal_date || '';
+                    const dateStr = row.execution_date || row.signal_date || row.date || '';
                     const dateObj = new Date(dateStr);
                     const dayName = isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleDateString('en-US', { weekday: 'short' });
                     const formattedDate = dateStr.split(/[ T]/)[0];
@@ -38,19 +31,21 @@ const TradesTransactions = ({ strategyType }) => {
 
                         // Group sells by ticker
                         (row.sell_transactions || []).forEach(t => {
-                            if (!aggregatedSells[t.ticker]) {
-                                aggregatedSells[t.ticker] = {
+                            const ticker = t.ticker || t.symbol;
+                            if (!aggregatedSells[ticker]) {
+                                aggregatedSells[ticker] = {
                                     type: 'S',
-                                    symbol: t.ticker,
+                                    symbol: ticker,
                                     units: 0,
                                     amount: 0,
                                     costs: 0,
                                     totalPrice: 0,
-                                    count: 0
+                                    count: 0,
+                                    reason: t.reason || row.reason || ''
                                 };
                             }
-                            const item = aggregatedSells[t.ticker];
-                            item.units += Number(t.units || 0);
+                            const item = aggregatedSells[ticker];
+                            item.units += Number(t.units || t.qty || 0);
                             item.amount += Number(t.amount || 0);
                             item.costs += Number(t.costs?.total_costs || 0);
                             item.totalPrice += Number(t.price || 0);
@@ -66,11 +61,12 @@ const TradesTransactions = ({ strategyType }) => {
                         const b = row.buy_transaction;
                         const buyList = b ? [{
                             type: 'B',
-                            symbol: b.ticker,
-                            units: Number(b.units || 0),
+                            symbol: b.ticker || b.symbol,
+                            units: Number(b.units || b.qty || 0),
                             price: Number(b.price || 0),
                             amount: Number(b.amount || 0),
-                            costs: Number(b.costs?.total_costs || 0)
+                            costs: Number(b.costs?.total_costs || 0),
+                            reason: b.reason || row.reason || ''
                         }] : [];
 
                         return {
@@ -79,38 +75,47 @@ const TradesTransactions = ({ strategyType }) => {
                             day: dayName,
                             action: 'churn',
                             items: [...sellList, ...buyList],
-                            portfolioValue: row.nav || row.cash_after || 0
+                            portfolioValue: row.nav || row.cash_after || 0,
+                            hasReason: [...sellList, ...buyList].some(item => item.reason)
                         };
                     } else {
                         // Accumulation or single buy/sell
                         const type = action === 'buy' ? 'B' : (action === 'sell' ? 'S' : '');
+                        const item = {
+                            type: type,
+                            symbol: row.ticker || row.symbol || '-',
+                            units: Number(row.units || row.qty || 0),
+                            price: Number(row.price || 0),
+                            amount: Number(row.amount || 0),
+                            costs: Number(row.costs?.total_costs || row.costs?.total_transaction_costs || 0),
+                            reason: row.reason || ''
+                        };
                         return {
-                            week: row.week,
+                            week: row.week || '-',
                             date: formattedDate,
                             day: dayName,
                             action: action,
-                            items: [{
-                                type: type,
-                                symbol: row.ticker || '-',
-                                units: Number(row.units || 0),
-                                price: Number(row.price || 0),
-                                amount: Number(row.amount || 0),
-                                costs: Number(row.costs?.total_costs || row.costs?.total_transaction_costs || 0)
-                            }],
-                            portfolioValue: row.nav || row.cash_after || 0
+                            items: [item],
+                            portfolioValue: row.nav || row.cash_after || 0,
+                            hasReason: !!item.reason
                         };
                     }
                 });
 
                 setData(processed || []);
             } catch (error) {
-                console.error('Error fetching transactions:', error);
+                console.error('Error processing transactions:', error);
             } finally {
                 setLoading(false);
             }
         };
-        if (strategyType) fetchData();
-    }, [strategyType]);
+
+        if (transactions && transactions.length > 0) {
+            processData();
+        } else {
+            setData([]);
+        }
+    }, [transactions]);
 
     const downloadExcel = () => {
         if (!data.length) return;
@@ -158,6 +163,12 @@ const TradesTransactions = ({ strategyType }) => {
         </div>
     );
 
+    // Calculate column visibility based on data content
+    const hasWeek = data.some(row => row.week !== '-' && row.week !== 0 && row.week !== '0' && row.week !== null && row.week !== undefined);
+    const hasCosts = data.some(row => row.items.some(item => Number(item.costs) > 0));
+    const hasPortfolio = data.some(row => Number(row.portfolioValue) > 0);
+    const hasReason = data.some(row => row.hasReason);
+
     return (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm m-1">
             <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-white">
@@ -175,18 +186,21 @@ const TradesTransactions = ({ strategyType }) => {
 
             <div className="overflow-x-auto scrollbar-hide">
                 <table className="w-full text-center border-collapse min-w-[1000px]">
-                    <thead className="bg-[#ffffff] border-b border-gray-100">
+                    <thead className="bg-gray-100 border-b border-gray-200">
                         <tr>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Week</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Date</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Day</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Action</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Symbols</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Units</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Prices</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Amount</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Transaction Costs</th>
-                            <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Portfolio Value</th>
+                            {hasWeek && <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Week</th>}
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Date</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Day</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Action</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Symbols</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Units/Qty</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Prices</th>
+                            <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Amount</th>
+                            {hasReason && (
+                                <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Reason</th>
+                            )}
+                            {hasCosts && <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Transaction Costs</th>}
+                            {hasPortfolio && <th className="py-2 px-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">Portfolio Value</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -194,14 +208,14 @@ const TradesTransactions = ({ strategyType }) => {
                             const isChurn = row.action === 'churn';
 
                             return (
-                                <tr key={idx} className={`group border-b border-gray-100 bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfe]/50'} hover:bg-teal-50/10`}>
-                                    <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{row.week}</td>
+                                <tr key={idx} className={`group border-b border-gray-100 bg-blue-100/70 transition-colors hover:bg-blue-100`}>
+                                    {hasWeek && <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{row.week}</td>}
                                     <td className="py-2 px-4 text-[12px] font-medium text-gray-600 text-center">{row.date}</td>
                                     <td className="py-2 px-4 text-center">
-                                        <span className="bg-[#dbeaff] text-[#3160e1] px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-tight">{row.day}</span>
+                                        <span className="bg-[#dbeaff] text-[#3160e1] px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-tight">{row.day}</span>
                                     </td>
                                     <td className="py-2 px-4 text-center">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-tight ${isChurn ? 'bg-[#facaca] text-[#bb0505]' :
+                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-tight ${isChurn ? 'bg-[#facaca] text-[#bb0505]' :
                                             row.action === 'buy' ? 'bg-green-200 text-green-700' :
                                                 row.action === 'sell' ? 'bg-red-200 text-red-700' :
                                                     'bg-gray-100 text-gray-500 border border-gray-200'
@@ -234,7 +248,7 @@ const TradesTransactions = ({ strategyType }) => {
                                         <div className="flex flex-col items-center space-y-1">
                                             {row.items.map((item, i) => (
                                                 <div key={i} className="text-[12px] font-medium text-gray-600">
-                                                    {currencySymbol}{item.price.toFixed(2)}
+                                                    {formatCurrency(item.price, currencySymbol)}
                                                 </div>
                                             ))}
                                         </div>
@@ -243,23 +257,38 @@ const TradesTransactions = ({ strategyType }) => {
                                         <div className="flex flex-col items-center space-y-1">
                                             {row.items.map((item, i) => (
                                                 <div key={i} className="text-[12px] font-bold text-gray-700">
-                                                    {currencySymbol}{Math.round(item.amount).toLocaleString()}
+                                                    {formatCurrency(item.amount, currencySymbol)}
                                                 </div>
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="py-2 px-4 text-center">
-                                        <div className="flex flex-col items-center space-y-1">
-                                            {row.items.map((item, i) => (
-                                                <div key={i} className="text-[12px] font-medium text-gray-600">
-                                                    {currencySymbol}{item.costs.toFixed(2)}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="py-2 px-4 text-center">
-                                        <span className="text-[14px] font-medium text-wealth-900 tracking-tight">{currencySymbol}{Math.round(row.portfolioValue).toLocaleString()}</span>
-                                    </td>
+                                    {hasReason && (
+                                        <td className="py-2 px-4 text-center">
+                                            <div className="flex flex-col items-center space-y-1">
+                                                {row.items.map((item, i) => (
+                                                    <div key={i} className="text-[11px] font-medium text-gray-500 italic">
+                                                        {item.reason || '-'}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    )}
+                                    {hasCosts && (
+                                        <td className="py-2 px-4 text-center">
+                                            <div className="flex flex-col items-center space-y-1">
+                                                {row.items.map((item, i) => (
+                                                    <div key={i} className="text-[12px] font-medium text-gray-600">
+                                                        {formatCurrency(item.costs, currencySymbol)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    )}
+                                    {hasPortfolio && (
+                                        <td className="py-2 px-4 text-center">
+                                            <span className="text-[14px] font-medium text-wealth-900 tracking-tight">{formatCurrency(row.portfolioValue, currencySymbol)}</span>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}
