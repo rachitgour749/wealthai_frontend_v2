@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './Components/Navbar';
 import Home from './Pages/Home';
@@ -15,6 +15,8 @@ import MyProfile from './Components/MyProfile';
 import AppPopup from './Components/Common/AppPopup';
 import PaymentPopup from './Components/PaymentPopup';
 import { selectShowPaymentPopup, selectPaymentPlan, setPaymentPopup } from './store/slices/subscriptionSlice';
+import { updateBrokerConnectionStatus } from './store/slices/brokerSlice';
+import { selectIsAuthenticated } from './store/slices/userSlice';
 
 
 const App = () => {
@@ -25,6 +27,15 @@ const App = () => {
   const showTrial = useSelector(selectShouldShowTrial); // Get from Redux
   const showPaymentPopup = useSelector(selectShowPaymentPopup);
   const paymentPlan = useSelector(selectPaymentPlan);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  // Check broker connection status on app load
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Check if broker session exists in localStorage/cookies
+      dispatch(updateBrokerConnectionStatus());
+    }
+  }, [isAuthenticated, dispatch]);
 
   const handleSetCurrentPage = (page) => {
     // Handle MyProfile as popup instead of page

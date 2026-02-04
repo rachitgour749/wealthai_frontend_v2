@@ -14,8 +14,11 @@ export const API_ENDPOINTS = {
     ACTIVATE_TRIAL: '/api/subscription/activate-trial',
     PRODUCTS: (email) => `/api/subscription/products/${email}`,
 
-    // Broker Details
+    // Broker
     GET_DETAILS: (email) => `/api/get_details?user_email=${email}`,
+    BROKER_LOGIN: '/api/broker/broker_login',
+    BROKER_STATUS: '/api/broker/get_broker_status',
+    BROKER_RECONNECT: '/api/broker/reconnect_broker',
 
     // Strategies
     ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,

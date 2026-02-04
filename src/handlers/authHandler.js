@@ -1,11 +1,12 @@
 import store from '../store/store';
 import Cookies from 'js-cookie';
+import { saveToken } from '../utils/tokenManager';
 import { loginUser, logoutUser } from '../store/slices/userSlice';
 import { fetchProducts, clearSubscriptionData } from '../store/slices/subscriptionSlice';
 import { resetNavigation } from '../store/slices/navigationSlice';
-import { clearBrokerConnection, updateBrokerConnectionStatus } from '../store/slices/brokerSlice';
+import { clearBrokerConnection, updateBrokerConnectionStatus, setSavedCredentials } from '../store/slices/brokerSlice';
 import * as authService from '../api/services/authService';
-import { getBrokerDetails, storeBrokerSession } from '../api/services/brokerService';
+import { storeBrokerSession, getBrokerStatus, reconnectBroker } from '../api/services/brokerService';
 
 /**
  * Helper to set SSO cookie on the shared parent domain
@@ -18,7 +19,7 @@ const setSSOCookie = (token) => {
             domain: domain,
             path: '/',
             expires: 7, // 7 days
-            secure: true,
+            secure: window.location.protocol === 'https:',
             sameSite: 'lax'
         });
 
@@ -64,6 +65,9 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
 
         const { token, user } = response;
 
+        // Save token to localStorage for axiosInstance
+        saveToken(token);
+
         if (!token) {
             console.error('No token in response:', response);
             throw new Error('No authentication token received from server');
@@ -87,15 +91,9 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
 
 
 
-        // Dispatch login action with user data and token
+        // Dispatch login action
         store.dispatch(loginUser({
-            googleId: googleUserInfo.sub,
-            email: googleUserInfo.email,
-            name: googleUserInfo.name,
-            picture: googleUserInfo.picture,
-            givenName: googleUserInfo.given_name,
-            familyName: googleUserInfo.family_name,
-            familyName: googleUserInfo.family_name,
+            ...googleUserInfo,
             token: token, // JWT token from backend
             role: user.role, // Role from backend response
         }));
@@ -126,26 +124,36 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
 
         // Check for broker connection details (WealthAI Logic)
         try {
-            const brokerData = await getBrokerDetails(googleUserInfo.email);
+            // First check if user has saved credentials
+            const status = await getBrokerStatus(googleUserInfo.email);
 
-            // Check required parameters: broker name, token, client_id, user_email, expire
-            if (brokerData &&
-                brokerData.broker_name &&
-                brokerData.token &&
-                brokerData.client_id &&
-                brokerData.user_email &&
-                brokerData.expire) {
+            if (status && status.has_credentials && status.broker_name) {
+                console.log('Saved credentials found, attempting auto-reconnect...');
+                store.dispatch(setSavedCredentials(true));
 
-                console.log('Valid broker session found, storing in cookies...');
+                // Attempt to reconnect to get a fresh session
+                try {
+                    const reconnectResponse = await reconnectBroker(googleUserInfo.email, status.broker_name);
 
-                // Store in cookies
-                storeBrokerSession(brokerData);
+                    if (reconnectResponse && reconnectResponse.status === "success") {
+                        console.log('✅ Auto-reconnect successful');
 
-                // Update Redux state (checks expiry -> Green/Red dot)
-                store.dispatch(updateBrokerConnectionStatus());
+                        // Store in cookies and localStorage
+                        storeBrokerSession(reconnectResponse);
+
+                        // Update Redux state
+                        store.dispatch(updateBrokerConnectionStatus());
+                    } else {
+                        console.log('ℹ️ Auto-reconnect failed (expired or invalid), user needs manual reconnection');
+                    }
+                } catch (reconnectErr) {
+                    console.error('Error during auto-reconnect:', reconnectErr);
+                }
+            } else {
+                store.dispatch(setSavedCredentials(false));
             }
         } catch (error) {
-            console.error('Error handling broker details:', error);
+            console.error('Error checking broker status during login:', error);
             // Non-blocking error
         }
 

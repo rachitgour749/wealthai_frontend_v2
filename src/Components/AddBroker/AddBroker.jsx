@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Typography, message, Modal } from 'antd';
-import { X } from 'lucide-react';
+import { Button, Typography, message, Modal, Spin } from 'antd';
+import { X, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import ClientForm from './ClientForm';
-import { brokerService } from '../../services/brokerService';
+import { brokerService, loginBroker, reconnectBroker, storeBrokerSession, saveLocalBrokerCredentials, getLocalBrokerCredentials } from '../../api/services/brokerService';
 import { useAuth } from '../../hooks/useAuth';
-import { useDispatch } from 'react-redux';
-import { updateBrokerConnectionStatus } from '../../store/slices/brokerSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    updateBrokerConnectionStatus,
+    selectIsBrokerConnected,
+    selectIsExpired,
+    selectHasSavedCredentials,
+    selectActiveBroker,
+    setSavedCredentials
+} from '../../store/slices/brokerSlice';
+import { selectUserEmail } from '../../store/slices/userSlice';
+import { setCurrentTab } from '../../store/slices/navigationSlice';
 
 const { Text, Title } = Typography;
 
@@ -105,17 +114,21 @@ const MenuItems = [
 ];
 
 const AddBroker = ({ isOpen, onClose, isInline = false }) => {
-    const { user } = useAuth();
     const dispatch = useDispatch();
+    const isConnected = useSelector(selectIsBrokerConnected);
+    const isExpired = useSelector(selectIsExpired);
+    // Use both Redux and LocalStorage for immediate UI sync
+    const hasSavedCredentials = useSelector(selectHasSavedCredentials) || localStorage.getItem('wealthai_has_broker') === 'true';
+    const activeBroker = useSelector(selectActiveBroker);
+    const userEmail = useSelector(selectUserEmail);
+
     const [selected, setSelected] = useState("ZERODHA");
     const [loading, setLoading] = useState(false);
     const [fieldError, setFieldError] = useState("");
     const [formState, setFormState] = useState({});
     const [isFormValid, setIsFormValid] = useState(false);
 
-    // If inline, always consider it "open"
     const effectiveIsOpen = isInline || isOpen;
-
     const fields = useMemo(() => createBrokerFields(selected), [selected]);
 
     const isComingSoon = useMemo(() => {
@@ -130,14 +143,19 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
     }, [effectiveIsOpen]);
 
     useEffect(() => {
+        // Pre-fill form with saved credentials if available
+        const savedCreds = getLocalBrokerCredentials(selected, userEmail);
+
         const initialState = fields.reduce((acc, { field }) => {
-            acc[field] = "";
+            // Use saved credential if available, otherwise empty string
+            acc[field] = (savedCreds && savedCreds[field]) || "";
             return acc;
         }, {});
+
         setFormState(initialState);
         setFieldError("");
         checkFormValidity(initialState);
-    }, [selected, fields, isOpen]);
+    }, [selected, fields, isOpen, userEmail]);
 
     const checkFormValidity = (formData) => {
         const isMissingFields = fields
@@ -165,13 +183,7 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
         checkFormValidity(initialState);
     };
 
-    const validateForm = () => {
-        const { email, ClientName, proxy_ip, port, proxy_username, proxy_password, ...rest } = formState;
-        return Object.values(rest).every(value => String(value)?.trim() !== "");
-    };
-
     const handleSubmit = async (submittedData) => {
-        // Manual validation for mandatory fields from the submitted data
         const isMissingFields = fields
             .filter(f => f.isMandatory !== false)
             .some(f => !submittedData[f.field] || String(submittedData[f.field]).trim() === "");
@@ -182,34 +194,209 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
             return;
         }
 
+        // Check if credentials already exist in localStorage
+        const existingCreds = getLocalBrokerCredentials(selected, userEmail);
+        const isAlreadySaved = existingCreds &&
+            existingCreds['Client ID'] === submittedData['Client ID'] &&
+            existingCreds['apiKey'] === submittedData['apiKey'];
+
+        if (isAlreadySaved) {
+            message.warning('Client already added');
+
+            // Update broker status to show green dot
+            dispatch(setSavedCredentials(true));
+            dispatch(updateBrokerConnectionStatus());
+
+            // Hide Add Broker tab and redirect to Strategies
+            setTimeout(() => {
+                dispatch(setCurrentTab('Strategies'));
+            }, 1000);
+            return;
+        }
+
+        // FULFILL USER REQUEST: Save details to cookies/localStorage even before submission
+        // This ensures they are persisted even if the backend call fails
+        saveLocalBrokerCredentials(selected, submittedData, userEmail);
+
         setLoading(true);
         try {
-            const success = await brokerService.loginWithBroker(selected, submittedData);
+            // Transform data for backend if needed
+            // Backend expects: user_email, broker_name, api_key, api_secret, username, password, totp_secret
+            const payload = {
+                user_email: userEmail,
+                broker_name: selected.toLowerCase(),
+                username: submittedData['Client ID'] || submittedData['username'],
+                password: submittedData['password'],
+                api_key: submittedData['apiKey'] || submittedData['api_key'],
+                api_secret: submittedData['secretKey'] || submittedData['api_secret'],
+                totp_secret: submittedData['totp'] || submittedData['totp_secret']
+            };
 
-            if (success) {
-                message.success(`${selected} client added successfully`);
+            const response = await loginBroker(payload);
+
+            if (response && response.status === "success") {
+                // Save to localStorage
+                localStorage.setItem('wealthai_has_broker', 'true');
+
+                storeBrokerSession({
+                    token: response.access_token,
+                    expire: response.expire,
+                    broker_name: response.broker_name,
+                    client_id: response.client_id,
+                    user_email: response.user_email,
+                    credentials: submittedData
+                });
+
+                // Update Redux state silently
+                dispatch(setSavedCredentials(true));
                 dispatch(updateBrokerConnectionStatus());
-                resetState();
-                onClose?.();
+
+                // Show success message
+                message.success('Client added successfully');
+
+                // Hide Add Broker tab and redirect to Strategies after 1 second
+                setTimeout(() => {
+                    dispatch(setCurrentTab('Strategies'));
+                }, 1000);
+
             } else {
-                message.error("Failed to add client. Please check your credentials.");
+                // Handle different error scenarios
+                const errorMessage = response?.message || "Failed to login. Please check your credentials.";
+
+                // Check if it's a duplicate/already exists error
+                if (errorMessage.toLowerCase().includes('already') ||
+                    errorMessage.toLowerCase().includes('exists') ||
+                    errorMessage.toLowerCase().includes('duplicate')) {
+                    message.warning('Client already added');
+
+                    // Hide Add Broker tab
+                    setTimeout(() => {
+                        dispatch(setCurrentTab('Strategies'));
+                    }, 1000);
+                } else {
+                    message.error(errorMessage);
+                }
             }
         } catch (error) {
             console.error("Submission failed:", error);
-            message.error("An error occurred. Please try again.");
+
+            // Extract error message from different possible locations
+            let errorMsg = "An error occurred. Please try again.";
+
+            if (error.response?.data?.detail) {
+                errorMsg = error.response.data.detail;
+            } else if (error.response?.data?.message) {
+                errorMsg = error.response.data.message;
+            } else if (error.message) {
+                errorMsg = error.message;
+            }
+
+            // Check if it's a duplicate/already exists error
+            if (errorMsg.toLowerCase().includes('already') ||
+                errorMsg.toLowerCase().includes('exists') ||
+                errorMsg.toLowerCase().includes('duplicate')) {
+                message.warning('Client already added');
+
+                // Hide Add Broker tab
+                setTimeout(() => {
+                    dispatch(setCurrentTab('Strategies'));
+                }, 1000);
+            } else {
+                message.error(errorMsg);
+            }
         } finally {
             setLoading(false);
         }
     };
 
+    const handleReconnect = async () => {
+        setLoading(true);
+        try {
+            const response = await reconnectBroker(userEmail, activeBroker || selected.toLowerCase());
+            if (response && response.status === "success") {
+                message.success(`Reconnected to ${response.broker_name} successfully`);
+                storeBrokerSession({
+                    token: response.access_token,
+                    expire: response.expire,
+                    broker_name: response.broker_name,
+                    client_id: response.client_id,
+                    user_email: response.user_email
+                });
+                dispatch(updateBrokerConnectionStatus());
+                dispatch(setSavedCredentials(true));
+            } else {
+                message.error("Re-connection failed. Please log in again.");
+            }
+        } catch (error) {
+            console.error("Re-connection error:", error);
+            message.error("Failed to reconnect. Please try manual login.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderConnectionStatus = () => {
+        const dotColor = isConnected ? '#22c55e' : (isExpired ? '#ef4444' : '#94a3b8');
+        const statusText = isConnected ? 'Connected' : (isExpired ? 'Session Expired' : 'Not Connected');
+
+        return (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white/50 backdrop-blur-sm rounded-2xl border border-[#9fddd2]/30 shadow-sm">
+                <div className="relative mb-6">
+                    <div
+                        className="w-24 h-24 rounded-full flex items-center justify-center animate-pulse"
+                        style={{ backgroundColor: `${dotColor}20`, border: `4px solid ${dotColor}` }}
+                    >
+                        {isConnected ? (
+                            <CheckCircle2 size={48} color={dotColor} />
+                        ) : (
+                            <AlertCircle size={48} color={dotColor} />
+                        )}
+                    </div>
+                </div>
+
+                <Title level={3} style={{ color: '#0f3d39', marginBottom: '8px' }}>
+                    {activeBroker?.toUpperCase()} Status
+                </Title>
+
+                <div className="flex items-center gap-2 mb-8">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dotColor }}></div>
+                    <Text strong style={{ color: dotColor, fontSize: '16px' }}>{statusText}</Text>
+                </div>
+
+                {!isConnected && (
+                    <div className="flex flex-col gap-4 w-full max-w-[300px]">
+                        <Button
+                            type="primary"
+                            icon={<RefreshCw className={loading ? 'animate-spin' : ''} size={18} />}
+                            onClick={handleReconnect}
+                            loading={loading}
+                            className="h-12 rounded-xl font-bold text-lg flex items-center justify-center gap-2 bg-wealth-700 hover:!bg-wealth-800 border-none shadow-lg shadow-wealth-700/20"
+                        >
+                            Reconnect Now
+                        </Button>
+                        <Button
+                            onClick={() => dispatch(setSavedCredentials(false))}
+                            className="h-12 rounded-xl font-semibold text-wealth-700 border-wealth-700 hover:!text-wealth-800 hover:!border-wealth-800"
+                        >
+                            Log in with different account
+                        </Button>
+                    </div>
+                )}
+
+                {isConnected && (
+                    <Text italic className="text-gray-500">
+                        You are all set! Your session is active and valid.
+                    </Text>
+                )}
+            </div>
+        );
+    };
+
     const content = (
         <div className={`flex overflow-hidden ${isInline ? 'rounded-xl' : ''} p-4 gap-4`}>
-            {/* Left Sidebar - Select Broker Box */}
+            {/* Left Sidebar */}
             <div className="w-[240px] bg-[#defff3] flex-shrink-0 rounded-xl overflow-hidden border border-[#9fddd2] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.1)]">
-                {/* Box Header */}
                 <h3 className="text-[#0f3d39] flex justify-start items-center mt-[12px] pl-[10px] text-[18px] font-bold mb-[5px]">Select Broker</h3>
-
-                {/* Broker List - Light blue shade */}
                 <div className="p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
                     <div className="flex flex-col gap-1">
                         {MenuItems.map((item) => (
@@ -223,42 +410,14 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
                                     ${item.isComingSoon ? 'opacity-50 cursor-not-allowed' : ''}
                                 `}
                             >
-                                <div className="flex-shrink-0">
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[12px] shadow-sm overflow-hidden p-1"
-                                        style={{
-                                            backgroundColor: selected === item.key ? 'rgba(255, 255, 255, 0.2)' : `${item.iconColor}10`,
-                                            border: selected === item.key ? '2px solid rgba(255, 255, 255, 0.6)' : `2px solid ${item.iconColor}90`
-                                        }}
-                                    >
-                                        {item.logo ? (
-                                            <img
-                                                src={item.logo}
-                                                alt={item.label}
-                                                className="w-full h-full object-contain"
-                                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                                            />
-                                        ) : null}
-                                        <span
-                                            style={{
-                                                display: item.logo ? 'none' : 'flex',
-                                                color: selected === item.key ? 'white' : item.iconColor
-                                            }}
-                                        >
-                                            {item.key.charAt(0)}
-                                        </span>
-                                    </div>
+                                <div className="flex-shrink-0 overflow-hidden rounded-lg w-8 h-8 flex items-center justify-center font-bold text-[12px] shadow-sm bg-white/20 border-2 border-white/60">
+                                    {item.logo ? (
+                                        <img src={item.logo} alt={item.label} className="w-full h-full object-contain p-1" />
+                                    ) : item.key.charAt(0)}
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className={`text-[14px] font-medium truncate ${selected === item.key ? 'text-white' : 'text-gray-600'}`}>
-                                        {item.label}
-                                    </span>
-                                    {item.isComingSoon && (
-                                        <span className="text-[9px] text-blue-500 font-medium whitespace-nowrap">
-                                            Coming soon...
-                                        </span>
-                                    )}
-                                </div>
+                                <span className={`text-[14px] font-medium truncate ${selected === item.key ? 'text-white' : 'text-gray-600'}`}>
+                                    {item.label}
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -266,7 +425,7 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-[400px]">
                 <div className="flex-1 overflow-y-auto">
                     {isComingSoon ? (
                         <div className="flex flex-col items-center justify-center h-full text-center p-12">
@@ -284,8 +443,8 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
                     )}
                 </div>
 
-                {/* Footer Actions */}
-                {!isComingSoon && (
+                {/* Footer Actions - only for new login */}
+                {!hasSavedCredentials && !isComingSoon && (
                     <div className="px-8 py-6 flex justify-end gap-3 bg-transparent">
                         {!isInline && (
                             <Button
@@ -312,39 +471,16 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
 
     const customStyles = (
         <style jsx>{`
-            .custom-scrollbar::-webkit-scrollbar {
-                width: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #e2e8f0;
-                border-radius: 10px;
-            }
-            /* Remove arrows from number inputs */
-            input::-webkit-outer-spin-button,
-            input::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-            }
-            input[type=number] {
-                -moz-appearance: textfield;
-            }
+            .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         `}</style>
     );
 
-    // Inline mode: render directly without Modal
     if (isInline) {
-        return (
-            <div className="w-full">
-                {content}
-                {customStyles}
-            </div>
-        );
+        return <div className="w-full">{content}{customStyles}</div>;
     }
 
-    // Modal mode: render inside Modal
     return (
         <Modal
             open={isOpen}
@@ -363,4 +499,3 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
 };
 
 export default AddBroker;
-

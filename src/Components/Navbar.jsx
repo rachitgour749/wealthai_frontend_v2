@@ -6,8 +6,11 @@ import { selectIsAuthenticated, selectUser } from '../store/slices/userSlice';
 import { selectCurrentPage } from '../store/slices/navigationSlice';
 import { handleLogout } from '../handlers/authHandler';
 import { Assets } from '../assets/Assets';
-import { selectIsBrokerConnected, updateBrokerConnectionStatus } from '../store/slices/brokerSlice';
+import { selectIsBrokerConnected, updateBrokerConnectionStatus, selectIsExpired, selectActiveBroker, setSavedCredentials } from '../store/slices/brokerSlice';
 import { selectCurrentTab, setCurrentTab } from '../store/slices/navigationSlice';
+import { reconnectBroker, storeBrokerSession, getBrokerStatus } from '../api/services/brokerService';
+import { selectUserEmail } from '../store/slices/userSlice';
+import { message } from 'antd';
 import LoginPopup from './LoginPopup';
 import UserAvatar from './Navbar/UserAvatar';
 import UserMenu from './Navbar/UserMenu';
@@ -19,6 +22,9 @@ const Navbar = ({ setCurrentPage }) => {
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const isBrokerConnected = useSelector(selectIsBrokerConnected);
+    const isExpired = useSelector(selectIsExpired);
+    const activeBroker = useSelector(selectActiveBroker);
+    const userEmail = useSelector(selectUserEmail);
     const user = useSelector(selectUser);
     const currentPage = useSelector(selectCurrentPage);
     const [menu, setMenu] = useState(false);
@@ -27,8 +33,15 @@ const Navbar = ({ setCurrentPage }) => {
 
     // Refresh broker connection status on mount and periodically
     useEffect(() => {
-        if (isAuthenticated) {
+        if (isAuthenticated && userEmail) {
             dispatch(updateBrokerConnectionStatus());
+
+            // Sync saved credentials status from backend on reload/mount
+            getBrokerStatus(userEmail).then(status => {
+                if (status && status.has_credentials) {
+                    dispatch(setSavedCredentials(true));
+                }
+            }).catch(err => console.error("Error syncing broker status:", err));
 
             // Check every minute for expiration
             const interval = setInterval(() => {
@@ -36,17 +49,44 @@ const Navbar = ({ setCurrentPage }) => {
             }, 60000);
             return () => clearInterval(interval);
         }
-    }, [isAuthenticated, dispatch]);
+    }, [isAuthenticated, userEmail, dispatch]);
 
-    const handleReconnect = () => {
+    const handleReconnect = async () => {
         // Don't open Add Broker popup - just attempt reconnection
         if (isBrokerConnected) {
-            // Already connected - do nothing or show status
-            console.log('Broker already connected');
-        } else {
+            message.info(`${activeBroker || 'Broker'} is already connected`);
+            return;
+        }
+
+        // Check if we have saved credentials for THIS user (user-specific)
+        const hasLocalCreds = localStorage.getItem(`wealthai_has_broker_${userEmail}`) === 'true';
+        const brokerName = activeBroker || localStorage.getItem(`wealthai_active_broker_${userEmail}`);
+
+        if (hasLocalCreds && brokerName) {
             // Attempt to reconnect using saved credentials
-            console.log('Attempting broker reconnection...');
-            // TODO: Add actual reconnection logic here
+            message.loading({ content: 'Reconnecting...', key: 'reconnect' });
+            try {
+                const response = await reconnectBroker(userEmail, brokerName);
+                if (response && response.status === "success") {
+                    message.success({ content: `Reconnected to ${response.broker_name} successfully`, key: 'reconnect' });
+                    storeBrokerSession({
+                        token: response.access_token,
+                        expire: response.expire,
+                        broker_name: response.broker_name,
+                        client_id: response.client_id,
+                        user_email: response.user_email
+                    });
+                    dispatch(updateBrokerConnectionStatus());
+                } else {
+                    message.error({ content: "Re-connection failed. Please check your credentials.", key: 'reconnect' });
+                }
+            } catch (error) {
+                console.error('Re-connection error:', error);
+                message.error({ content: "Re-connection error. Please try again later.", key: 'reconnect' });
+            }
+        } else {
+            // No saved credentials for this user - just show a message, don't open Add Broker
+            message.warning('No saved broker credentials found. Please add a broker from MarketsAI.');
         }
     };
 

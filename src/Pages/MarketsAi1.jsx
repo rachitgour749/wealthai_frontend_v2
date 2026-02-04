@@ -15,6 +15,8 @@ import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
 import Stock from '../Strategies/Stock'
 import AddBroker from '../Components/AddBroker/AddBroker'
+import { selectHasSavedCredentials, selectIsBrokerConnected } from '../store/slices/brokerSlice'
+import { useEffect } from 'react'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -22,6 +24,21 @@ const MarketsAi1 = () => {
   const currentStrategy = useSelector(selectCurrentStrategy)
   const subscriptionProducts = useSelector(selectProducts)
   const userEmail = useSelector(selectUserEmail)
+  const hasSavedCredentialsState = useSelector(selectHasSavedCredentials)
+  const isBrokerConnected = useSelector(selectIsBrokerConnected)
+
+  // Robust check combining Redux and LocalStorage for zero-latency UI updates
+  const hasSavedCredentials = hasSavedCredentialsState || localStorage.getItem('wealthai_has_broker') === 'true';
+
+  const isRedirectionNeeded = hasSavedCredentials || isBrokerConnected;
+
+  // Switch away from AddBroker tab if details are saved or broker is connected
+  useEffect(() => {
+    if (isRedirectionNeeded && currentTab === 'AddBroker') {
+      console.log('Force redirecting to Strategies as broker is configured');
+      dispatch(setCurrentTab('Strategies'));
+    }
+  }, [isRedirectionNeeded, currentTab, dispatch])
 
   // Get MARKETAI subscription
   const subscription = getSubscriptionByProduct(subscriptionProducts, 'MARKETAI')
@@ -66,17 +83,27 @@ const MarketsAi1 = () => {
       case 'MyPortfolio':
         return <MyPortfolio />
       case 'AddBroker':
+        if (hasSavedCredentials || isBrokerConnected) {
+          return <Strategies />; // Safety fallback
+        }
         return <AddBroker isInline={true} />
       default:
         return <Strategies />
     }
   }
 
-  const tabs = [
-    { label: 'Strategies', value: 'Strategies' },
-    { label: 'My Portfolio', value: 'MyPortfolio' },
-    { label: 'Add Broker', value: 'AddBroker' },
-  ]
+  const tabs = React.useMemo(() => {
+    return [
+      { label: 'Strategies', value: 'Strategies' },
+      { label: 'My Portfolio', value: 'MyPortfolio' },
+      { label: 'Add Broker', value: 'AddBroker' },
+    ].filter(tab => {
+      if (tab.value === 'AddBroker') {
+        return !hasSavedCredentials && !isBrokerConnected;
+      }
+      return true;
+    });
+  }, [hasSavedCredentials, isBrokerConnected]);
 
 
   return (

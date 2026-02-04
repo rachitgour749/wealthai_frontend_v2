@@ -1,55 +1,192 @@
-import axios from 'axios';
-import API_BASE_URL, { API_ENDPOINTS } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
+import { API_ENDPOINTS } from '../config/apiConfig';
 import Cookies from 'js-cookie';
 
+
 /**
- * Fetch broker details for a user
- * @param {string} email 
+ * Perform broker login
+ * @param {object} credentials - Login credentials (user_email, broker_name, etc.)
  * @returns {Promise<object>}
  */
-export const getBrokerDetails = async (email) => {
+export const loginBroker = async (credentials) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.GET_DETAILS(email)}`);
+        const response = await axiosInstance.post(API_ENDPOINTS.BROKER_LOGIN, credentials);
         return response.data;
     } catch (error) {
-        console.error('Error fetching broker details:', error);
+        console.error('Error performing broker login:', error);
         throw error;
     }
 };
 
 /**
- * Store broker session details in cookies
- * @param {object} data - Broker data 
+ * Get broker status for a user
+ * @param {string} userEmail 
+ * @returns {Promise<object>}
  */
-export const storeBrokerSession = (data) => {
-    if (!data) return;
+export const getBrokerStatus = async (userEmail) => {
+    try {
+        const response = await axiosInstance.get(API_ENDPOINTS.BROKER_STATUS, {
+            params: { user_email: userEmail }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching broker status:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reconnect broker using saved credentials
+ * @param {string} userEmail 
+ * @param {string} brokerName 
+ * @returns {Promise<object>}
+ */
+export const reconnectBroker = async (userEmail, brokerName) => {
+    try {
+        const response = await axiosInstance.post(API_ENDPOINTS.BROKER_RECONNECT, null, {
+            params: { user_email: userEmail, broker_name: brokerName }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error reconnecting broker:', error);
+        throw error;
+    }
+};
+
+/**
+ * Store broker session details in cookies and localStorage
+ * @param {object} session - Session details
+ */
+export const storeBrokerSession = (session) => {
+    // Handle either response format (login returns access_token, internal uses token)
+    const token = session.token || session.access_token;
+    const { expire, broker_name, client_id, user_email } = session;
+
+    if (!token) {
+        console.error("Attempted to store broker session without a token");
+        return;
+    }
 
     // Cookie options
     const options = {
-        expires: 7, // 7 days
-        secure: true,
-        sameSite: 'lax'
+        expires: 1, // 1 day
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax',
+        path: '/'
     };
 
-    // Store individual fields as requested or a JSON object
-    // Storing as a JSON object 'broker_session' for easier management
-    // and also individual fields if needed by backend/other apps
-    Cookies.set('broker_session', JSON.stringify({
-        broker_name: data.broker_name,
-        token: data.token,
-        client_id: data.client_id,
-        user_email: data.user_email,
-        expire: data.expire
-    }), options);
+    // Store in cookies for backend and shared state
+    Cookies.set('wealthai_broker_token', token, options);
+    Cookies.set('wealthai_broker_name', broker_name, options);
+    Cookies.set('wealthai_broker_client_id', client_id, options);
+    Cookies.set('wealthai_broker_expiry', expire, options);
 
-    // Also syncing with localStorage for existing redux slice compatibility if needed
-    // But we will update redux slice to read from cookies primarily or sync here
-    localStorage.setItem('active_broker_session', JSON.stringify({
-        broker_name: data.broker_name,
-        token: data.token,
-        // ... other fields if needed by existing code
-    }));
+    // CRITICAL: Store the combined session cookie that brokerSlice.js expects
+    const sessionData = {
+        token,
+        expire,
+        broker_name,
+        client_id,
+        user_email,
+        credentials: session.credentials || null // Persist raw credentials if provided
+    };
+
+    Cookies.set('broker_session', JSON.stringify(sessionData), options);
+
+    // Store in localStorage for frontend quick access
+    localStorage.setItem('wealthai_has_broker', 'true');
+    localStorage.setItem('wealthai_active_broker', broker_name);
+    localStorage.setItem('wealthai_client_id', client_id);
+    localStorage.setItem('broker_session', JSON.stringify(sessionData));
+
+    // Also save raw credentials separately for form pre-filling if available
+    if (session.credentials) {
+        saveLocalBrokerCredentials(broker_name, session.credentials);
+    }
 };
+
+/**
+ * Save raw broker credentials locally for pre-filling (user-specific)
+ * @param {string} brokerName 
+ * @param {object} credentials 
+ * @param {string} userEmail - User's email to make storage user-specific
+ */
+export const saveLocalBrokerCredentials = (brokerName, credentials, userEmail) => {
+    try {
+        if (!userEmail) {
+            console.error("Cannot save credentials without user email");
+            return;
+        }
+
+        // Store credentials per user email
+        const storageKey = `wealthai_creds_${userEmail}`;
+        const allCreds = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        allCreds[brokerName.toLowerCase()] = credentials;
+        localStorage.setItem(storageKey, JSON.stringify(allCreds));
+        localStorage.setItem(`wealthai_has_broker_${userEmail}`, 'true');
+        localStorage.setItem(`wealthai_active_broker_${userEmail}`, brokerName.toLowerCase());
+    } catch (e) {
+        console.error("Error saving local credentials:", e);
+    }
+};
+
+/**
+ * Get raw broker credentials for a specific broker (user-specific)
+ * @param {string} brokerName 
+ * @param {string} userEmail - User's email to retrieve user-specific credentials
+ * @returns {object|null}
+ */
+export const getLocalBrokerCredentials = (brokerName, userEmail) => {
+    try {
+        if (!userEmail) {
+            console.error("Cannot get credentials without user email");
+            return null;
+        }
+
+        const storageKey = `wealthai_creds_${userEmail}`;
+        const allCreds = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        return allCreds[brokerName.toLowerCase()] || null;
+    } catch (e) {
+        console.error("Error reading local credentials:", e);
+        return null;
+    }
+};
+
+/**
+ * Get stored broker session
+ * @returns {object|null}
+ */
+export const getStoredBrokerSession = () => {
+    const session = localStorage.getItem('broker_session');
+    return session ? JSON.parse(session) : null;
+};
+
+/**
+ * Clear broker session
+ */
+export const clearBrokerSession = () => {
+    Cookies.remove('wealthai_broker_token');
+    Cookies.remove('wealthai_broker_name');
+    Cookies.remove('wealthai_broker_client_id');
+    Cookies.remove('wealthai_broker_expiry');
+    localStorage.removeItem('wealthai_has_broker');
+    localStorage.removeItem('wealthai_active_broker');
+    localStorage.removeItem('wealthai_client_id');
+    localStorage.removeItem('broker_session');
+};
+
+export const brokerService = {
+    loginBroker,
+    getBrokerStatus,
+    reconnectBroker,
+    storeBrokerSession,
+    getStoredBrokerSession,
+    saveLocalBrokerCredentials,
+    getLocalBrokerCredentials,
+    clearBrokerSession
+};
+
+export default brokerService;
 
 /**
  * Check if broker token is active

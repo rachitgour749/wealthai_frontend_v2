@@ -26,6 +26,7 @@ const ClientForm = ({ fields, formState, handleSubmit, loading, error }) => {
                                 )}
                             </div>
                             <Input
+                                key={`${field.field}-${formState[field.field]}`}
                                 name={field.field}
                                 type={field.value || 'text'}
                                 placeholder={field.placeHolder}

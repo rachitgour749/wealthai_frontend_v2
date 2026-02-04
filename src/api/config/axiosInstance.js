@@ -8,6 +8,7 @@ import { logoutUser } from '../../store/slices/userSlice';
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
     timeout: 300000, // 30 seconds
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
