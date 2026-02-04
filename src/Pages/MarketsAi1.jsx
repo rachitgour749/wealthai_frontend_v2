@@ -14,6 +14,7 @@ import ETF_US from '../Strategies/ETF_US'
 import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
 import Stock from '../Strategies/Stock'
+import AddBroker from '../Components/AddBroker/AddBroker'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -64,6 +65,8 @@ const MarketsAi1 = () => {
     switch (currentTab) {
       case 'MyPortfolio':
         return <MyPortfolio />
+      case 'AddBroker':
+        return <AddBroker isInline={true} />
       default:
         return <Strategies />
     }
@@ -72,6 +75,7 @@ const MarketsAi1 = () => {
   const tabs = [
     { label: 'Strategies', value: 'Strategies' },
     { label: 'My Portfolio', value: 'MyPortfolio' },
+    { label: 'Add Broker', value: 'AddBroker' },
   ]
 
 

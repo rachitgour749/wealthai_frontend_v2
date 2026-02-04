@@ -3,7 +3,9 @@ import Cookies from 'js-cookie';
 import { loginUser, logoutUser } from '../store/slices/userSlice';
 import { fetchProducts, clearSubscriptionData } from '../store/slices/subscriptionSlice';
 import { resetNavigation } from '../store/slices/navigationSlice';
+import { clearBrokerConnection, updateBrokerConnectionStatus } from '../store/slices/brokerSlice';
 import * as authService from '../api/services/authService';
+import { getBrokerDetails, storeBrokerSession } from '../api/services/brokerService';
 
 /**
  * Helper to set SSO cookie on the shared parent domain
@@ -122,6 +124,31 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
             console.error('Error fetching products:', error);
         }
 
+        // Check for broker connection details (WealthAI Logic)
+        try {
+            const brokerData = await getBrokerDetails(googleUserInfo.email);
+
+            // Check required parameters: broker name, token, client_id, user_email, expire
+            if (brokerData &&
+                brokerData.broker_name &&
+                brokerData.token &&
+                brokerData.client_id &&
+                brokerData.user_email &&
+                brokerData.expire) {
+
+                console.log('Valid broker session found, storing in cookies...');
+
+                // Store in cookies
+                storeBrokerSession(brokerData);
+
+                // Update Redux state (checks expiry -> Green/Red dot)
+                store.dispatch(updateBrokerConnectionStatus());
+            }
+        } catch (error) {
+            console.error('Error handling broker details:', error);
+            // Non-blocking error
+        }
+
     } catch (error) {
         console.error('Login error:', error);
         console.error('Error details:', {
@@ -169,6 +196,9 @@ export const handleLogout = () => {
 
         // Reset navigation to home page
         store.dispatch(resetNavigation());
+
+        // Clear broker connection
+        store.dispatch(clearBrokerConnection());
 
         // Clear SSO cookie
         clearSSOCookie();

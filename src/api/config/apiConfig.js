@@ -1,6 +1,6 @@
 // API Base URL - Update this with your actual API URL
 
-const dev = true;
+const dev = false;
 
 const API_BASE_URL = dev ? 'http://localhost:8000' : 'https://8sx9uc9pfy.ap-south-1.awsapprunner.com';
 
@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
     USER_SUBSCRIPTION: (email) => `/api/subscription/user/${email}`,
     ACTIVATE_TRIAL: '/api/subscription/activate-trial',
     PRODUCTS: (email) => `/api/subscription/products/${email}`,
+
+    // Broker Details
+    GET_DETAILS: (email) => `/api/get_details?user_email=${email}`,
 
     // Strategies
     ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,

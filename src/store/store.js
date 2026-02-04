@@ -4,6 +4,7 @@ import subscriptionReducer from './slices/subscriptionSlice';
 import navigationReducer from './slices/navigationSlice';
 import strategyReducer from './slices/strategySlice';
 import uiReducer from './slices/uiSlice';
+import brokerReducer from './slices/brokerSlice';
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
         navigation: navigationReducer,
         strategy: strategyReducer,
         ui: uiReducer,
+        broker: brokerReducer,
     },
 });
 

@@ -1,23 +1,54 @@
 import React, { useState } from 'react';
+import Lottie from 'lottie-react';
+import reconnectAnimation from '../assets/animations/reconnect.json';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, selectUser } from '../store/slices/userSlice';
 import { selectCurrentPage } from '../store/slices/navigationSlice';
 import { handleLogout } from '../handlers/authHandler';
 import { Assets } from '../assets/Assets';
+import { selectIsBrokerConnected, updateBrokerConnectionStatus } from '../store/slices/brokerSlice';
+import { selectCurrentTab, setCurrentTab } from '../store/slices/navigationSlice';
 import LoginPopup from './LoginPopup';
 import UserAvatar from './Navbar/UserAvatar';
 import UserMenu from './Navbar/UserMenu';
 import NavIcons from './Navbar/NavIcons';
 import MobileMenu from './Navbar/MobileMenu';
+import { useEffect } from 'react';
 
 const Navbar = ({ setCurrentPage }) => {
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
+    const isBrokerConnected = useSelector(selectIsBrokerConnected);
     const user = useSelector(selectUser);
     const currentPage = useSelector(selectCurrentPage);
     const [menu, setMenu] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
     const [showLoginPopup, setShowLoginPopup] = useState(false);
+
+    // Refresh broker connection status on mount and periodically
+    useEffect(() => {
+        if (isAuthenticated) {
+            dispatch(updateBrokerConnectionStatus());
+
+            // Check every minute for expiration
+            const interval = setInterval(() => {
+                dispatch(updateBrokerConnectionStatus());
+            }, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [isAuthenticated, dispatch]);
+
+    const handleReconnect = () => {
+        // Don't open Add Broker popup - just attempt reconnection
+        if (isBrokerConnected) {
+            // Already connected - do nothing or show status
+            console.log('Broker already connected');
+        } else {
+            // Attempt to reconnect using saved credentials
+            console.log('Attempting broker reconnection...');
+            // TODO: Add actual reconnection logic here
+        }
+    };
 
     const handleSignOut = () => {
         handleLogout(dispatch);
@@ -86,9 +117,46 @@ const Navbar = ({ setCurrentPage }) => {
                 <NavIcons setCurrentPage={setCurrentPage} />
 
                 {isAuthenticated && (
+                    <div
+                        onClick={handleReconnect}
+                        className="cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ml-2 relative group"
+                        title={isBrokerConnected ? 'Broker Connected' : 'Broker Disconnected - Click to Connect'}
+                    >
+                        <div className={`w-[38px] h-[38px] flex items-center justify-center rounded-full shadow-md hover:shadow-lg transition-all duration-300 border-2 ${isBrokerConnected
+                            ? 'bg-gradient-to-br from-emerald-400/20 to-emerald-600/30 border-emerald-400/50 hover:border-emerald-400/80'
+                            : 'bg-gradient-to-br from-red-400/20 to-red-600/30 border-red-400/50 hover:border-red-400/80'
+                            }`}>
+                            {/* Reconnect SVG Icon - Two circular arrows */}
+                            <svg
+                                className={`w-[22px] h-[22px] ${isBrokerConnected ? 'text-emerald-500' : 'text-red-500'} ${!isBrokerConnected ? 'animate-spin' : ''}`}
+                                style={{ animationDuration: '3s' }}
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                {/* Top arrow */}
+                                <path d="M21 2v6h-6" />
+                                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                                {/* Bottom arrow */}
+                                <path d="M3 22v-6h6" />
+                                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                            </svg>
+                        </div>
+                        {/* Status Indicator Dot */}
+                        <span className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white shadow-sm ${isBrokerConnected
+                            ? 'bg-emerald-500'
+                            : 'bg-red-500'
+                            }`} />
+                    </div>
+                )}
+
+                {isAuthenticated && (
                     <div className='relative'>
                         <div
-                            className='ml-[10px] w-[55px] h-[32px] flex justify-center items-center gap-[5px] rounded-full pr-[7px] transition-all duration-300 cursor-pointer bg-white/70 hover:bg-white/90'
+                            className='w-[55px] h-[32px] flex justify-center items-center gap-[5px] rounded-full pr-[7px] transition-all duration-300 cursor-pointer bg-white/70 hover:bg-white/90'
                             onClick={() => setMenu(!menu)}
                         >
                             <UserAvatar user={user} size="small" />
