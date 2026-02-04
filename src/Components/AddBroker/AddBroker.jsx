@@ -203,9 +203,13 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
         if (isAlreadySaved) {
             message.warning('Client already added');
 
-            // Update broker status to show green dot
+            // Update broker status to show green dot - with delay
             dispatch(setSavedCredentials(true));
-            dispatch(updateBrokerConnectionStatus());
+
+            // Wait for state to update before checking status
+            setTimeout(() => {
+                dispatch(updateBrokerConnectionStatus());
+            }, 100);
 
             // Hide Add Broker tab and redirect to Strategies
             setTimeout(() => {
@@ -234,7 +238,11 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
 
             const response = await loginBroker(payload);
 
+            console.log('🔥 Backend response received:', response);
+
             if (response && response.status === "success") {
+                console.log('✅ Login successful, storing session...');
+
                 // Save to localStorage
                 localStorage.setItem('wealthai_has_broker', 'true');
 
@@ -247,9 +255,13 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
                     credentials: submittedData
                 });
 
-                // Update Redux state silently
+                // Update Redux state silently - with delay to allow cookies to be set
                 dispatch(setSavedCredentials(true));
-                dispatch(updateBrokerConnectionStatus());
+
+                // Wait for cookies to be set before checking status
+                setTimeout(() => {
+                    dispatch(updateBrokerConnectionStatus());
+                }, 100);
 
                 // Show success message
                 message.success('Client added successfully');
@@ -260,6 +272,7 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
                 }, 1000);
 
             } else {
+                console.log('❌ Login failed, response:', response);
                 // Handle different error scenarios
                 const errorMessage = response?.message || "Failed to login. Please check your credentials.";
 

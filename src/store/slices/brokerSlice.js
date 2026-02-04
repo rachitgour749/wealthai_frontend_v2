@@ -1,11 +1,48 @@
 import { createSlice } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
 
-// Helper to check connection status from cookie
+// Helper to check connection status from localStorage (synchronous) and cookie (fallback)
 const checkConnection = () => {
     try {
+        // First try localStorage (synchronous, immediate)
+        const localSession = localStorage.getItem('broker_session');
+        console.log('🔍 Checking broker connection, localStorage value:', localSession ? 'FOUND' : 'NOT FOUND');
+
+        if (localSession) {
+            try {
+                const session = JSON.parse(localSession);
+                console.log('📦 Parsed session from localStorage:', session);
+
+                // Check mandatory fields
+                if (!session.token) {
+                    console.log('❌ No token in session');
+                    return { connected: false, broker: null, expired: false };
+                }
+
+                // Check expiry
+                if (session.expire) {
+                    const now = new Date();
+                    const expireDate = new Date(session.expire);
+                    if (expireDate <= now) {
+                        console.log('⏰ Session expired');
+                        return { connected: false, broker: session.broker_name, expired: true };
+                    }
+                }
+
+                console.log('✅ Broker connected:', session.broker_name);
+                return {
+                    connected: true,
+                    broker: session.broker_name,
+                    expired: false
+                };
+            } catch (parseError) {
+                console.error('Error parsing localStorage session:', parseError);
+            }
+        }
+
+        // Fallback to cookie if localStorage not found or parsing failed
         const sessionCookie = Cookies.get('broker_session');
-        console.log('🔍 Checking broker connection, cookie value:', sessionCookie);
+        console.log('🔍 Checking broker connection, cookie value:', sessionCookie ? 'FOUND' : 'NOT FOUND');
 
         if (!sessionCookie) {
             console.log('❌ No broker_session cookie found');
@@ -13,7 +50,7 @@ const checkConnection = () => {
         }
 
         const session = JSON.parse(sessionCookie);
-        console.log('📦 Parsed session:', session);
+        console.log('📦 Parsed session from cookie:', session);
 
         // Check mandatory fields
         if (!session.token) {

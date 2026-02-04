@@ -58,9 +58,10 @@ export const reconnectBroker = async (userEmail, brokerName) => {
  * @param {object} session - Session details
  */
 export const storeBrokerSession = (session) => {
-    // Handle either response format (login returns access_token, internal uses token)
     const token = session.token || session.access_token;
     const { expire, broker_name, client_id, user_email } = session;
+
+    console.log('💾 Storing broker session:', { token, expire, broker_name, client_id, user_email });
 
     if (!token) {
         console.error("Attempted to store broker session without a token");
@@ -91,17 +92,25 @@ export const storeBrokerSession = (session) => {
         credentials: session.credentials || null // Persist raw credentials if provided
     };
 
+    console.log('📦 Session data to store:', sessionData);
     Cookies.set('broker_session', JSON.stringify(sessionData), options);
 
-    // Store in localStorage for frontend quick access
-    localStorage.setItem('wealthai_has_broker', 'true');
-    localStorage.setItem('wealthai_active_broker', broker_name);
+    // Verify cookie was set
+    const verifySet = Cookies.get('broker_session');
+    console.log('✅ Verified broker_session cookie:', verifySet ? 'SET' : 'NOT SET');
+
+    // Store in localStorage for frontend quick access (user-specific)
+    localStorage.setItem(`wealthai_has_broker_${user_email}`, 'true');
+    localStorage.setItem(`wealthai_active_broker_${user_email}`, broker_name);
     localStorage.setItem('wealthai_client_id', client_id);
     localStorage.setItem('broker_session', JSON.stringify(sessionData));
 
+    console.log(`✅ Stored user-specific flags for ${user_email}`);
+
     // Also save raw credentials separately for form pre-filling if available
-    if (session.credentials) {
-        saveLocalBrokerCredentials(broker_name, session.credentials);
+    if (session.credentials && user_email) {
+        saveLocalBrokerCredentials(broker_name, session.credentials, user_email);
+        console.log('✅ Saved credentials for pre-filling');
     }
 };
 
