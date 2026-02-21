@@ -11,12 +11,16 @@ import ETF from '../Strategies/ETF'
 import RS_ETF from '../Strategies/RS_ETF'
 import ETF_Payout from '../Strategies/ETF_Payout'
 import ETF_US from '../Strategies/ETF_US'
+import ETF_Swing from '../Strategies/ETF_Swing'
 import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
 import Stock from '../Strategies/Stock'
 import AddBroker from '../Components/AddBroker/AddBroker'
 import { selectHasSavedCredentials, selectIsBrokerConnected } from '../store/slices/brokerSlice'
 import { useEffect } from 'react'
+import Stockal from '../Components/Stockal/Stockal'
+import { validateStockalUser } from '../store/slices/stockalSlice'
+import { showNotification } from '../store/slices/uiSlice'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -33,20 +37,36 @@ const MarketsAi1 = () => {
   const isRedirectionNeeded = hasSavedCredentials || isBrokerConnected;
 
   // Switch away from AddBroker tab if details are saved or broker is connected
-  useEffect(() => {
-    if (isRedirectionNeeded && currentTab === 'AddBroker') {
-      console.log('Force redirecting to Strategies as broker is configured');
-      dispatch(setCurrentTab('Strategies'));
-    }
-  }, [isRedirectionNeeded, currentTab, dispatch])
+  // useEffect(() => {
+  //   if (isRedirectionNeeded && currentTab === 'AddBroker') {
+  //     console.log('Force redirecting to Strategies as broker is configured');
+  //     dispatch(setCurrentTab('Strategies'));
+  //   }
+  // }, [isRedirectionNeeded, currentTab, dispatch])
 
   // Get MARKETAI subscription
   const subscription = getSubscriptionByProduct(subscriptionProducts, 'MARKETAI')
   const planName = subscription?.plan_name || 'N/A'
   const validTill = subscription?.subscription_end_date ? formatDate(subscription.subscription_end_date) : 'N/A'
 
-  const handleTabChange = (tab) => {
-    dispatch(setCurrentTab(tab))
+  const handleTabChange = async (tab) => {
+    if (tab === 'Stockal' && userEmail) {
+      dispatch(showNotification({ message: 'Validating user...', type: 'loading' }));
+      try {
+        const result = await dispatch(validateStockalUser(userEmail)).unwrap();
+        dispatch(showNotification({ message: 'User validated', type: 'success' }));
+        dispatch(setCurrentTab(tab));
+      } catch (error) {
+        if (error === 'USER_NOT_FOUND') {
+          dispatch(showNotification({ message: 'Redirecting to onboarding...', type: 'info' }));
+          dispatch(setCurrentTab(tab));
+        } else {
+          dispatch(showNotification({ message: `Validation failed: ${error}`, type: 'error' }));
+        }
+      }
+    } else {
+      dispatch(setCurrentTab(tab));
+    }
   }
 
   const handleBackToStrategies = () => {
@@ -65,6 +85,8 @@ const MarketsAi1 = () => {
         return <ETF_Payout onBack={handleBackToStrategies} />
       case 'etf-strategy-us':
         return <ETF_US onBack={handleBackToStrategies} />
+      case 'etf-swing-strategy':
+        return <ETF_Swing onBack={handleBackToStrategies} />
       case 'custom-strategy':
         return <CustomStrategies onBack={handleBackToStrategies} />
       default:
@@ -83,10 +105,9 @@ const MarketsAi1 = () => {
       case 'MyPortfolio':
         return <MyPortfolio />
       case 'AddBroker':
-        if (hasSavedCredentials || isBrokerConnected) {
-          return <Strategies />; // Safety fallback
-        }
         return <AddBroker isInline={true} />
+      case 'Stockal':
+        return <Stockal isInline={true} />
       default:
         return <Strategies />
     }
@@ -96,14 +117,10 @@ const MarketsAi1 = () => {
     return [
       { label: 'Strategies', value: 'Strategies' },
       { label: 'My Portfolio', value: 'MyPortfolio' },
-      { label: 'Add Broker', value: 'AddBroker' },
-    ].filter(tab => {
-      if (tab.value === 'AddBroker') {
-        return !hasSavedCredentials && !isBrokerConnected;
-      }
-      return true;
-    });
-  }, [hasSavedCredentials, isBrokerConnected]);
+      { label: 'Account Config', value: 'AddBroker' },
+      // { label: 'Stockal', value: 'Stockal' },
+    ];
+  }, []);
 
 
   return (
@@ -115,7 +132,7 @@ const MarketsAi1 = () => {
               key={tab.value}
               className={`px-2 md:px-4 py-[2px] cursor-pointer flex justify-center items-center text-[12px] md:text-[16px] transition-all duration-300 ${currentTab === tab.value
                 ? 'bg-slate-300 text-wealth-800 font-bold rounded-t-[10px] shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1),inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-x border-slate-400 border-b-0 relative z-10'
-                : 'text-gray-500 hover:text-gray-700 font-semibold hover:-translate-y-0.5'
+                : 'text-gray-500 hover:text-gray-700 font-semibold'
                 }`}
               style={currentTab === tab.value ? {
                 animation: 'tabActive 0.6s ease-out',

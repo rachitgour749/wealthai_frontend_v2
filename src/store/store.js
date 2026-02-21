@@ -5,6 +5,7 @@ import navigationReducer from './slices/navigationSlice';
 import strategyReducer from './slices/strategySlice';
 import uiReducer from './slices/uiSlice';
 import brokerReducer from './slices/brokerSlice';
+import stockalReducer from './slices/stockalSlice';
 
 export const store = configureStore({
     reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
         strategy: strategyReducer,
         ui: uiReducer,
         broker: brokerReducer,
+        stockal: stockalReducer,
     },
 });
 

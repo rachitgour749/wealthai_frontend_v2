@@ -47,7 +47,7 @@ const Strategies = () => {
     return (
         <div className="h-full flex flex-col px-1 md:px-4 py-1 md:py-2">
             {/* Header with Filters and Toggle */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-3 mb-2 md:mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-3 mb-2 md:mb-4 max-w-7xl mx-auto w-full">
                 {/* Filter Tags */}
                 <div className="flex gap-1 md:gap-2 flex-wrap">
                     {allTags.map(tag => (

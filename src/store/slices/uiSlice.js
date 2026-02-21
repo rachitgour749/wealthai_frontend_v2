@@ -4,7 +4,7 @@ const initialState = {
     notification: {
         isVisible: false,
         message: '',
-        type: 'success', // 'success' | 'error'
+        type: 'success', // 'success' | 'error' | 'loading' | 'info' | 'warning'
     },
     viewMode: 'config', // 'config' | 'results'
 };

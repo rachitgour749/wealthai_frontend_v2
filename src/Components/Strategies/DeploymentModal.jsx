@@ -1,13 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { X, Plus, Trash2, Info } from 'lucide-react';
 import { getToken } from '../../utils/tokenManager';
 import API_BASE_URL from '../../api/config/apiConfig';
 import { showNotification } from '../../store/slices/uiSlice';
+import { formatDate } from '../../utils/formatUtils';
+import { selectUser } from '../../store/slices/userSlice';
+import { fetchAccountDetails } from '../../store/slices/brokerSlice';
+import { setCurrentPage, setCurrentTab } from '../../store/slices/navigationSlice';
+import { Assets } from '../../assets/Assets';
 
 const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmail, accumulationWeeks, runId, onDeploy }) => {
     const dispatch = useDispatch();
-    const [webhook, setWebhook] = useState('');
+    const user = useSelector(selectUser);
+    const accountDetails = useSelector(state => state.broker.accountDetails);
+
+    // Check if user is a client
+    const isClient = user?.role === 'CLIENT';
+
+    const [webhook, setWebhook] = useState(isClient ? 'marketai' : '');
     const [webhooksList, setWebhooksList] = useState([]);
     const [referenceCapital, setReferenceCapital] = useState('100000');
     const [displayReferenceCapital, setDisplayReferenceCapital] = useState('1,00,000');
@@ -20,13 +31,66 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
     const [loading, setLoading] = useState(false);
 
     const isInternational = strategyType === 'ETF_US' || strategyType === 'International_ETF_Rotation' || strategyType?.includes('International');
+    const currencySymbol = isInternational ? '$' : '₹';
+
+    // Format number with Indian comma notation or standard notation
+    const formatNumber = (num) => {
+        if (!num) return '';
+        const number = parseFloat(num);
+        if (isNaN(number)) return '';
+
+        if (isInternational) {
+            return number.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        }
+        return number.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    };
 
     // Fetch webhooks and clients when modal opens
     useEffect(() => {
-        if (isOpen && userEmail && !isInternational) {
-            fetchWebhooksAndClients();
+        if (isOpen) {
+            console.log('DeploymentModal Open | isClient:', isClient, 'userEmail:', userEmail);
+            console.log('Current accountDetails:', accountDetails);
+
+            if (isClient) {
+                // Client Logic: Hardcode webhook and use connected broker
+                setWebhook('marketai');
+
+                // If account details are missing, fetch them
+                if (!accountDetails && userEmail) {
+                    console.log('Dispatching fetchAccountDetails for:', userEmail);
+                    dispatch(fetchAccountDetails(userEmail));
+                }
+
+                // Check for nested data structure (e.g. { status: 'success', data: { ... } })
+                const details = accountDetails?.data || accountDetails;
+
+                // Identification of Indian brokers
+                const isIndianBroker = ['angelone', 'zerodha', 'kotak', 'dhan', 'aliceblue'].includes(details?.broker_name?.toLowerCase());
+
+                if (details && details.client_id && !(isInternational && isIndianBroker)) {
+                    console.log('Setting clients from details:', details);
+                    const weeks = parseFloat(accumulationWeeks) || 1;
+                    const baseCapital = parseFloat(referenceCapital) || 0;
+                    const capitalPerWeek = baseCapital / weeks;
+
+                    setClients([{
+                        id: 1,
+                        clientId: details.client_id,
+                        clientName: details.client_name || 'My Account',
+                        broker: details.broker_name,
+                        multiple: 1,
+                        finalCapital: `${currencySymbol}${formatNumber(capitalPerWeek * 1)}`
+                    }]);
+                } else {
+                    console.warn('accountDetails missing, incomplete, or incompatible (Indian broker for US strategy):', accountDetails);
+                    setClients([]);
+                }
+            } else if (userEmail && !isInternational) {
+                // Admin/Broker Logic: Fetch from API
+                fetchWebhooksAndClients();
+            }
         }
-    }, [isOpen, userEmail, strategyType, isInternational]);
+    }, [isOpen, userEmail, strategyType, isInternational, isClient, JSON.stringify(accountDetails), referenceCapital, dispatch]); // Deep dependency on accountDetails
 
     const fetchWebhooksAndClients = async () => {
         setLoading(true);
@@ -66,7 +130,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                         clientName: client.client_name,
                         broker: client.broker,
                         multiple: 1,
-                        finalCapital: `₹${formatIndianNumber(capitalPerWeek * 1)}`
+                        finalCapital: `₹${formatNumber(capitalPerWeek * 1)}`
                     }));
 
                     setClients(fetchedClients);
@@ -81,32 +145,14 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
 
     if (!isOpen) return null;
 
-    const deploymentDate = new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).replace(/ /g, '-');
-
-    // Format number with Indian comma notation or standard notation
-    const formatNumber = (num) => {
-        if (!num) return '';
-        const number = parseFloat(num);
-        if (isNaN(number)) return '';
-
-        if (isInternational) {
-            return number.toLocaleString('en-US', { maximumFractionDigits: 2 });
-        }
-        return number.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-    };
-
-    const currencySymbol = isInternational ? '$' : '₹';
+    const deploymentDate = formatDate(new Date());
 
     // Handle Reference Capital change with formatting
     const handleReferenceCapitalChange = (e) => {
         const value = e.target.value.replace(/,/g, ''); // Remove existing commas
         if (value === '' || !isNaN(value)) {
             setReferenceCapital(value);
-            setDisplayReferenceCapital(value ? formatIndianNumber(value) : '');
+            setDisplayReferenceCapital(value ? formatNumber(value) : '');
 
             // Recalculate all clients' final capital
             if (clients.length > 0) {
@@ -176,6 +222,21 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
 
     const handleClientInputChange = (e) => {
         setClientInput(e.target.value.toUpperCase());
+    };
+
+    const handleClientFinalCapitalChange = (id, value) => {
+        // Remove existing commas and symbols to get raw number
+        const rawValue = value.replace(/[^0-9.]/g, '');
+
+        setClients(clients.map(client => {
+            if (client.id === id) {
+                return {
+                    ...client,
+                    finalCapital: value // Keep user input as is for display, valid numbers extracted during deploy
+                };
+            }
+            return client;
+        }));
     };
 
     const handleDeploy = async () => {
@@ -352,14 +413,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                         {/* Left Section */}
                         <div className="space-y-4">
                             {/* Webhook or Coming Soon */}
-                            {isInternational ? (
-                                <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
-                                    <h3 className="text-blue-900 text-sm font-bold uppercase tracking-wider mb-2">Auto-Deployment Coming Soon</h3>
-                                    <p className="text-blue-800/80 text-[12px] leading-relaxed">
-                                        We are integrating with <strong>Stockal</strong> broker for seamless, one-click trading in the US market. Stay tuned for real-time order execution!
-                                    </p>
-                                </div>
-                            ) : (
+                            {!isInternational && !isClient ? (
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-[2px]">
                                         Webhook
@@ -381,21 +435,23 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                                         </datalist>
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
 
-                            {/* Reference Capital */}
-                            <div>
-                                <label className="block text-gray-600 text-sm font-medium mb-[2px]">
-                                    Reference Capital
-                                </label>
-                                <input
-                                    type="text"
-                                    value={displayReferenceCapital}
-                                    onChange={handleReferenceCapitalChange}
-                                    placeholder={`${currencySymbol}100,000`}
-                                    className="w-full px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-sm"
-                                />
-                            </div>
+                            {/* Reference Capital - Hide for Client */}
+                            {!isClient && (
+                                <div>
+                                    <label className="block text-gray-600 text-sm font-medium mb-[2px]">
+                                        Reference Capital
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={displayReferenceCapital}
+                                        onChange={handleReferenceCapitalChange}
+                                        placeholder={`${currencySymbol}100,000`}
+                                        className="w-full px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-sm"
+                                    />
+                                </div>
+                            )}
 
                             {/* Notification Settings */}
                             <div>
@@ -427,91 +483,204 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
 
                         {/* Right Section - Client ID Management */}
                         <div>
-                            <label className="text-gray-600 text-sm font-medium">
-                                Client ID
-                            </label>
-                            <div className="flex items-center justify-between mb-3 mt-[-3px]">
-                                <div className="flex gap-2 w-full">
-                                    <input
-                                        type="text"
-                                        value={clientInput}
-                                        onChange={handleClientInputChange}
-                                        placeholder="ENTER CLIENT ID"
-                                        className="w-full h-7 px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-[12px]"
-                                    />
-                                    <button
-                                        onClick={handleAddClient}
-                                        className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white p-1 rounded-[5px] transition-colors"
-                                        title="Add Client"
-                                    >
-                                        <Plus size={18} />
-                                    </button>
-                                    {!isInternational && (
-                                        <>
-                                            <button
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="h-7 w-7 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-[5px] transition-colors"
-                                                title="Import"
-                                            >
-                                                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                </svg>
-                                            </button>
-                                            {/* Hidden file input for Excel import */}
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept=".xlsx,.xls"
-                                                onChange={handleExcelImport}
-                                                style={{ display: 'none' }}
-                                            />
-                                        </>
-                                    )}
-                                </div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-gray-600 text-sm font-medium">
+                                    {isClient ? 'Connected Broker Account' : 'Client ID'}
+                                </label>
+                                {isClient && (
+                                    <span className="text-[10px] px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded">
+                                        Active
+                                    </span>
+                                )}
                             </div>
 
-                            {/* Client Table */}
-                            <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-100 border-b border-gray-300">
-                                        <tr>
-                                            <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">S.NO.</th>
-                                            <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">CLIENT ID</th>
-                                            <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">MULTIPLE</th>
-                                            <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">FINAL CAPITAL</th>
-                                            <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">DELETE</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-300 bg-white">
-                                        {clients.map((client, index) => (
-                                            <tr key={client.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-1.5 text-gray-700 text-center">{index + 1}</td>
-                                                <td className="px-4 py-1.5 text-gray-700 font-medium text-center">{client.clientId}</td>
-                                                <td className="px-4 py-1.5">
-                                                    <div className="flex justify-center items-center">
-                                                        <input
-                                                            type="number"
-                                                            value={client.multiple}
-                                                            onChange={(e) => handleMultipleChange(client.id, e.target.value)}
-                                                            className="w-16 flex justify-center items-center px-1 py-[1px] border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-center text-sm"
-                                                            step="0.1"
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-1.5 text-green-600 font-semibold text-center">{client.finalCapital}</td>
-                                                <td className="px-4 py-1.5 text-center">
-                                                    <button
-                                                        onClick={() => handleRemoveClient(client.id)}
-                                                        className="text-red-500 hover:text-red-700 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </td>
+                            {!isClient && (
+                                <div className="flex items-center justify-between mb-3 mt-[-3px]">
+                                    <div className="flex gap-2 w-full">
+                                        <input
+                                            type="text"
+                                            value={clientInput}
+                                            onChange={handleClientInputChange}
+                                            placeholder="ENTER CLIENT ID"
+                                            className="w-full h-7 px-3 py-1 border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-[12px]"
+                                        />
+                                        <button
+                                            onClick={handleAddClient}
+                                            className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white p-1 rounded-[5px] transition-colors"
+                                            title="Add Client"
+                                        >
+                                            <Plus size={18} />
+                                        </button>
+                                        {!isInternational && (
+                                            <>
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="h-7 w-7 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-[5px] transition-colors"
+                                                    title="Import"
+                                                >
+                                                    <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                    </svg>
+                                                </button>
+                                                {/* Hidden file input for Excel import */}
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept=".xlsx,.xls"
+                                                    onChange={handleExcelImport}
+                                                    style={{ display: 'none' }}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Show Configure Broker button if client has no broker account */}
+                            {isClient && clients.length === 0 ? (
+                                <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2 bg-gray-50 p-2">
+                                    {isInternational ? (
+                                        <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-[10px] text-center">
+                                            <h3 className="text-blue-900 text-sm font-bold uppercase tracking-wider mb-2">Auto-Deployment Coming Soon</h3>
+                                            <p className="text-blue-800/80 text-[12px] leading-relaxed">
+                                                We are integrating with <strong>Stockal</strong> broker for seamless, one-click trading in the US market. Stay tuned for real-time order execution!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="text-center">
+                                                <p className="text-gray-600 text-sm mb-2">No broker account configured</p>
+                                                <p className="text-gray-500 text-xs">Please configure your broker account to deploy strategies</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    onClose();
+                                                    dispatch(setCurrentPage('MarketsAi1'));
+                                                    dispatch(setCurrentTab('AddBroker'));
+                                                }}
+                                                className="px-6 py-2 bg-wealth-800 hover:bg-wealth-900 text-white rounded-[5px] transition-colors font-medium text-sm flex items-center gap-2"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                Configure Broker Account
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-100 border-b border-gray-300">
+                                            <tr>
+                                                {/* Broker Icon Header - Client Only */}
+                                                {isClient && (
+                                                    <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">
+                                                        BROKER ICON
+                                                    </th>
+                                                )}
+
+                                                {/* S.NO / BROKER NAME Header */}
+                                                <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">
+                                                    {isClient ? 'BROKER NAME' : 'S.NO.'}
+                                                </th>
+
+                                                <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">CLIENT ID</th>
+                                                {!isClient && <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">MULTIPLE</th>}
+
+                                                {/* Capital Header */}
+                                                <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">
+                                                    {isClient
+                                                        ? (['ETF_Rotation', 'International_ETF_Rotation', 'Stock_Rotation', 'ETF_Payout'].includes(strategyType)
+                                                            ? 'CAPITAL PER WEEK'
+                                                            : 'TOTAL CAPITAL')
+                                                        : 'FINAL CAPITAL'}
+                                                </th>
+
+                                                {!isClient && <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">DELETE</th>}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-300 bg-white">
+                                            {clients.map((client, index) => (
+                                                <tr key={client.id} className="hover:bg-gray-50">
+                                                    {/* Broker Icon Column - Client Only */}
+                                                    {isClient && (
+                                                        <td className="px-4 py-1.5 text-center">
+                                                            <div className="flex items-center justify-center">
+                                                                {client.broker?.toLowerCase().includes('angel') ? (
+                                                                    <img src={Assets.angelone} alt="AngelOne" className="h-6 w-6 object-contain" />
+                                                                ) : client.broker?.toLowerCase().includes('zerodha') ? (
+                                                                    <img src={Assets.zerodha} alt="Zerodha" className="h-8 w-8 border border-gray-300 rounded-[8px] bg-slate-200/30 p-1 object-contain" />
+                                                                ) : client.broker?.toLowerCase().includes('kotak') ? (
+                                                                    <img src={Assets.kotak} alt="Kotak" className="h-6 w-6 object-contain" />
+                                                                ) : client.broker?.toLowerCase().includes('dhan') ? (
+                                                                    <img src={Assets.dhan} alt="Dhan" className="h-6 w-6 object-contain" />
+                                                                ) : (
+                                                                    <span className="text-xs font-bold text-gray-600">-</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )}
+
+                                                    {/* S.NO / Broker Name Column */}
+                                                    <td className="px-4 py-1.5 text-gray-700 text-center">
+                                                        {isClient ? (
+                                                            <span className="font-medium text-gray-800">{client.broker || 'Unknown'}</span>
+                                                        ) : (
+                                                            index + 1
+                                                        )}
+                                                    </td>
+
+                                                    <td className="px-4 py-1.5 text-gray-700 font-medium text-center">{client.clientId}</td>
+
+                                                    {/* Multiple Column - Admin Only */}
+                                                    {!isClient && (
+                                                        <td className="px-4 py-1.5">
+                                                            <div className="flex justify-center items-center">
+                                                                <input
+                                                                    type="number"
+                                                                    value={client.multiple}
+                                                                    onChange={(e) => handleMultipleChange(client.id, e.target.value)}
+                                                                    className="w-16 flex justify-center items-center px-1 py-[1px] border border-gray-300 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-wealth-500 text-center text-sm"
+                                                                    step="0.1"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    )}
+
+                                                    {/* Final Capital / Capital Per Week - Editable for Client */}
+                                                    <td className="px-4 py-1.5 text-center">
+                                                        {isClient ? (
+                                                            <input
+                                                                type="text"
+                                                                value={client.finalCapital}
+                                                                onChange={(e) => handleClientFinalCapitalChange(client.id, e.target.value)}
+                                                                className="w-28 px-2 py-1 text-center font-semibold text-green-600 border border-gray-300 rounded focus:ring-wealth-500 focus:border-wealth-500"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-green-600 font-semibold">{client.finalCapital}</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Delete Column - Admin Only */}
+                                                    {!isClient && (
+                                                        <td className="px-4 py-1.5 text-center">
+                                                            <button
+                                                                onClick={() => handleRemoveClient(client.id)}
+                                                                className={`transition-colors text-red-500 hover:text-red-700`}
+                                                                title="Remove"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -526,8 +695,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                     </button>
                     <button
                         onClick={handleDeploy}
-                        disabled={loading || clients.length === 0}
-                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0
+                        disabled={loading || clients.length === 0 || isInternational}
+                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0 || isInternational
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-wealth-800 hover:bg-wealth-900'
                             } text-white`}
@@ -541,8 +710,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                         {loading ? 'Deploying...' : 'Save Deployment'}
                     </button>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

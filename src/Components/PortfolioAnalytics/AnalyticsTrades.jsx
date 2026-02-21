@@ -1,10 +1,8 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Download } from 'lucide-react';
+import { formatDate } from '../../utils/formatUtils';
 
 const AnalyticsTrades = ({ trades, loading }) => {
-    const fileInputRef = useRef(null);
-
-    // Filter States
     const [filters, setFilters] = useState({
         date: '',
         asset: '',
@@ -15,17 +13,38 @@ const AnalyticsTrades = ({ trades, loading }) => {
         client: ''
     });
 
-    const handleUploadClick = () => {
-        if (fileInputRef.current) {
-            fileInputRef.current.click();
-        }
-    };
+    const handleDownloadExcel = async () => {
+        if (!filteredTrades || filteredTrades.length === 0) return;
 
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            console.log("Selected file for upload:", file.name);
-            // TODO: Upload logic
+        try {
+            const XLSX = await import('xlsx');
+
+            // Format data for Excel
+            const excelData = filteredTrades.map(trade => {
+                const isBuy = trade.side?.toLowerCase() === 'buy';
+                const totalValue = (trade.quantity * trade.price) + (isBuy ? (trade.taxes + trade.brokerage) : -(trade.taxes + trade.brokerage));
+
+                return {
+                    'Date': formatDate(trade.trade_date),
+                    'Asset': trade.symbol,
+                    'Type': trade.side,
+                    'Quantity': trade.quantity,
+                    'Price': trade.price,
+                    'Total Value': totalValue,
+                    'Client': trade.client_code || '-'
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Trades");
+
+            // Generate filename with date
+            const dateStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Trade_Transactions_${dateStr}.xlsx`);
+
+        } catch (error) {
+            console.error("Error exporting to Excel:", error);
         }
     };
 
@@ -37,17 +56,6 @@ const AnalyticsTrades = ({ trades, loading }) => {
         }).format(value || 0);
     };
 
-    const formatDate = (dateStr) => {
-        try {
-            return new Date(dateStr).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            });
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({
@@ -104,19 +112,12 @@ const AnalyticsTrades = ({ trades, loading }) => {
                         <h3 className="text-lg font-bold text-gray-800">Trade Transactions</h3>
                     </div>
 
-                    {/* Excel Upload Button */}
+                    {/* Excel Download Button */}
                     <div className='flex items-center gap-3'>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept=".xlsx, .xls, .csv"
-                            className="hidden"
-                        />
                         <button
-                            onClick={handleUploadClick}
+                            onClick={handleDownloadExcel}
                             className="p-2 bg-gray-100 text-wealth-800 font-bold text-[15px] hover:bg-gray-200 rounded-lg transition-colors"
-                            title="Upload Excel"
+                            title="Download Excel"
                         >
                             <Download size={24} />
                         </button>

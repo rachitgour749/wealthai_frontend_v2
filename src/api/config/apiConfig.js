@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
     BROKER_LOGIN: '/api/broker/broker_login',
     BROKER_STATUS: '/api/broker/get_broker_status',
     BROKER_RECONNECT: '/api/broker/reconnect_broker',
+    BROKER_RELOGIN: (email) => `/api/broker/relogin?user_email=${email}`,
+    ACCOUNT_DETAILS: (email) => `/api/broker/account_details?user_email=${email}`,
+    DELETE_ACCOUNT: (email, clientId) => `/api/broker/delete_account?user_email=${email}&client_id=${clientId}`,
+    UPDATE_CREDENTIALS: '/api/broker/update_credentials',
 
     // Strategies
     ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,
@@ -47,6 +51,14 @@ export const API_ENDPOINTS = {
 
     // ChatAI
     CHAT_QUERY: '/api/query',
+
+    // Stockal
+    STOCKAL_ACCOUNT_INFO: (custId) => `http://localhost:8001/api/v1/stockal/account-info/${custId}`,
+    STOCKAL_BENEFICIARIES: (custId) => `http://localhost:8001/api/v1/stockal/beneficiaries/${custId}`,
+    STOCKAL_USER_UPDATE: (custId) => `http://localhost:8001/api/v1/stockal/user-update/${custId}`,
+    STOCKAL_CREATE_USER: '/api/v1/stockal/create-user',
+    VALIDATE_STOCKAL_USER: (email) => `http://localhost:8001/api/v1/validate-user/${email}`,
+    STOCKAL_USERNAME_CHECK: (username) => `http://localhost:8001/api/v1/stockal/username-check/${username}`,
 };
 
 export default API_BASE_URL;

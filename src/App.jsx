@@ -15,13 +15,14 @@ import MyProfile from './Components/MyProfile';
 import AppPopup from './Components/Common/AppPopup';
 import PaymentPopup from './Components/PaymentPopup';
 import { selectShowPaymentPopup, selectPaymentPlan, setPaymentPopup } from './store/slices/subscriptionSlice';
-import { updateBrokerConnectionStatus } from './store/slices/brokerSlice';
-import { selectIsAuthenticated } from './store/slices/userSlice';
+import { updateBrokerConnectionStatus, fetchAccountDetails } from './store/slices/brokerSlice';
+import { selectIsAuthenticated, selectUserEmail } from './store/slices/userSlice';
 
 
 const App = () => {
   const dispatch = useDispatch();
   const currentPage = useSelector(selectCurrentPage);
+  const userEmail = useSelector(selectUserEmail);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const showTrial = useSelector(selectShouldShowTrial); // Get from Redux
@@ -31,11 +32,14 @@ const App = () => {
 
   // Check broker connection status on app load
   useEffect(() => {
-    if (isAuthenticated) {
-      // Check if broker session exists in localStorage/cookies
+    if (isAuthenticated && userEmail) {
+      // 1. Fetch account details from API (New Source of Truth)
+      dispatch(fetchAccountDetails(userEmail));
+
+      // 2. Fallback: Check if broker session exists in localStorage/cookies (Legacy Sync)
       dispatch(updateBrokerConnectionStatus());
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated, userEmail, dispatch]);
 
   const handleSetCurrentPage = (page) => {
     // Handle MyProfile as popup instead of page
