@@ -5,6 +5,8 @@
             "name": "ETF Rotation US",
             "description": "Mean Reversion & Low Volatility ETFs rotation strategy for US markets",
             "strategy_type": "International_ETF_Rotation",
+            "market": "US",
+            "assets_type": "ETF",
             "universe_selection": {
                 "title": "ETF Universe Selection",
                 "subtitle": "Choose ETFs for rotation strategy",
@@ -29,13 +31,13 @@
                     "id": "brokerage",
                     "label": "Brokerage (%)",
                     "type": "number",
-                    "defaultValue": 0.01
+                    "defaultValue": 0.2
                 },
                 {
-                    "id": "riskLevel",
-                    "label": "Risk Level",
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
                     "type": "number",
-                    "defaultValue": 0.06
+                    "defaultValue": 4.5
                 }
             ],
             "available_etfs": [
@@ -61,6 +63,8 @@
             "name": "Stock Rotation",
             "description": "Mean Reversion & Low Volatility Stocks rotation strategy",
             "strategy_type": "Stock_Rotation",
+            "market": "INDIA",
+            "assets_type": "STOCK",
             "universe_selection": {
                 "title": "Stock Universe Selection",
                 "subtitle": "Choose Stocks for rotation strategy",
@@ -100,6 +104,8 @@
             "name": "ETF Rotation",
             "description": "Mean Reversion & Low Volatility ETFs rotation strategy",
             "strategy_type": "ETF_Rotation",
+            "market": "INDIA",
+            "assets_type": "ETF",
             "universe_selection": {
                 "title": "ETF Universe Selection",
                 "subtitle": "Choose ETFs for rotation strategy",
@@ -139,6 +145,8 @@
             "name": "RS ETF Strategy",
             "description": "Relative Strength based ETF trading strategy",
             "strategy_type": "RS_ETF_Rotation",
+            "market": "INDIA",
+            "assets_type": "ETF",
             "universe_selection": {
                 "title": "ETF Universe Selection",
                 "subtitle": "Choose ETFs for relative strength strategy",
@@ -196,6 +204,8 @@
             "name": "ETF Rotation Payout",
             "description": "Mean Reversion & Low Volatility ETFs rotation strategy with payout focus",
             "strategy_type": "ETF_Payout",
+            "market": "INDIA",
+            "assets_type": "ETF",
             "universe_selection": {
                 "title": "ETF Universe Selection",
                 "subtitle": "Choose ETFs for payout focus strategy",
@@ -248,60 +258,25 @@
             "name": "ETF Swing Strategy",
             "description": "Swing trading strategy for ETFs based on SMA and percentage thresholds.",
             "strategy_type": "ETF_Swing_Strategy",
+            "market": "INDIA",
+            "assets_type": "ETF",
             "universe_selection": {
                 "title": "ETF Universe Selection",
                 "subtitle": "Choose ETFs for swing strategy",
                 "placeholder": "Select ETFs...",
                 "subName": "ETFs"
             },
-            "available_etfs": [
-                {
-                    "symbol": "NIFTYBEES",
-                    "sector": "Nifty 50",
-                    "years": 5
-                },
-                {
-                    "symbol": "BANKBEES",
-                    "sector": "Banking",
-                    "years": 5
-                },
-                {
-                    "symbol": "GOLDBEES",
-                    "sector": "Gold",
-                    "years": 5
-                },
-                {
-                    "symbol": "ITBEES",
-                    "sector": "IT",
-                    "years": 5
-                },
-                {
-                    "symbol": "PHARMABEES",
-                    "sector": "Pharma",
-                    "years": 5
-                },
-                {
-                    "symbol": "SILVERBEES",
-                    "sector": "Silver",
-                    "years": 5
-                },
-                {
-                    "symbol": "MON100",
-                    "sector": "Nasdaq 100",
-                    "years": 5
-                }
-            ],
             "parameters": [
                 {
                     "id": "initial_capital",
-                    "label": "Initial Capital",
+                    "label": "Total Capital",
                     "type": "number",
                     "defaultValue": 1000000,
                     "unit": "₹"
                 },
                 {
                     "id": "sma_lookback",
-                    "label": "SMA Lookback (Max 250)",
+                    "label": "SMA Period (Max 250)",
                     "type": "number",
                     "defaultValue": 50
                 },
@@ -327,7 +302,184 @@
                     "id": "brokerage",
                     "label": "Brokerage (%)",
                     "type": "number",
-                    "defaultValue": 0
+                    "defaultValue": 0.2
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        },
+        {
+            "id": "ETF_US_Swing",
+            "name": "ETF US Swing Strategy",
+            "description": "Swing trading strategy for US ETFs based on SMA and percentage thresholds.",
+            "strategy_type": "US_ETF_Swing_Strategy",
+            "market": "US",
+            "assets_type": "ETF",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose US ETFs for swing strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
+            },
+            "parameters": [
+                {
+                    "id": "initial_capital",
+                    "label": "Initial Capital",
+                    "type": "number",
+                    "defaultValue": 100000,
+                    "unit": "$"
+                },
+                {
+                    "id": "sma_lookback",
+                    "label": "SMA Period (Max 250)",
+                    "type": "number",
+                    "defaultValue": 50
+                },
+                {
+                    "id": "stop_loss_pct",
+                    "label": "Stop Loss (%)",
+                    "type": "number",
+                    "defaultValue": 5.0
+                },
+                {
+                    "id": "profit_threshold_pct",
+                    "label": "Profit Threshold (%)",
+                    "type": "number",
+                    "defaultValue": 10.0
+                },
+                {
+                    "id": "number_of_slots",
+                    "label": "Number of Slots",
+                    "type": "number",
+                    "defaultValue": 5
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0.2
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        },
+        {
+            "id": "SuperTrend",
+            "name": "Super Trend",
+            "description": "Momentum-based Trend Following System using SuperTrend indicator.",
+            "strategy_type": "SuperTrend",
+            "market": "INDIA",
+            "asset_type": "ETF",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose ETFs for SuperTrend strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
+            },
+            "parameters": [
+                {
+                    "id": "initial_capital",
+                    "label": "Initial Capital",
+                    "type": "number",
+                    "defaultValue": 100000,
+                    "unit": "₹"
+                },
+                {
+                    "id": "atr_multiplier",
+                    "label": "ATR Multiplier",
+                    "type": "number",
+                    "defaultValue": 3.0
+                },
+                {
+                    "id": "atr_period",
+                    "label": "ATR Period",
+                    "type": "number",
+                    "defaultValue": 10
+                },
+                {
+                    "id": "stop_loss_pct",
+                    "label": "Stop Loss (%)",
+                    "type": "number",
+                    "defaultValue": 5.0
+                },
+                {
+                    "id": "number_of_slots",
+                    "label": "Number of Slots",
+                    "type": "number",
+                    "defaultValue": 5
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0.2
+                },
+                {
+                    "id": "riskFreeRate",
+                    "label": "Risk Free Rate (%)",
+                    "type": "number",
+                    "defaultValue": 6
+                }
+            ]
+        },
+        {
+            "id": "SuperTrend-us",
+            "name": "US Super Trend",
+            "description": "Momentum-based Trend Following System using SuperTrend indicator for US Market.",
+            "strategy_type": "SuperTrend",
+            "market": "US",
+            "assets_type": "ETF",
+            "universe_selection": {
+                "title": "ETF Universe Selection",
+                "subtitle": "Choose US ETFs for SuperTrend strategy",
+                "placeholder": "Select ETFs...",
+                "subName": "ETFs"
+            },
+            "parameters": [
+                {
+                    "id": "initial_capital",
+                    "label": "Initial Capital",
+                    "type": "number",
+                    "defaultValue": 100000,
+                    "unit": "$"
+                },
+                {
+                    "id": "atr_multiplier",
+                    "label": "ATR Multiplier",
+                    "type": "number",
+                    "defaultValue": 3.0
+                },
+                {
+                    "id": "atr_period",
+                    "label": "ATR Period",
+                    "type": "number",
+                    "defaultValue": 10
+                },
+                {
+                    "id": "stop_loss_pct",
+                    "label": "Stop Loss (%)",
+                    "type": "number",
+                    "defaultValue": 5.0
+                },
+                {
+                    "id": "number_of_slots",
+                    "label": "Number of Slots",
+                    "type": "number",
+                    "defaultValue": 5
+                },
+                {
+                    "id": "brokerage",
+                    "label": "Brokerage (%)",
+                    "type": "number",
+                    "defaultValue": 0.02
                 },
                 {
                     "id": "riskFreeRate",

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF US Swing Strategy | MarketsAI - Powered by WealthAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f3d39;
+            --primary-light: #319795;
+            --secondary: #5bcb7f;
+            --bg-light: #e1fbe9;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --white: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a5c56 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 700px;
+            font-weight: 400;
+        }
+
+        .section-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #edf2f7;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-light);
+            border-radius: 2px;
+        }
+
+        h3 {
+            color: var(--primary-light);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-item {
+            background: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-light);
+            transition: transform 0.2s;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .feature-item h4 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .feature-item p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .formula {
+            background: #f1f5f9;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin: 1rem 0;
+            border-left: 4px solid #cbd5e1;
+        }
+
+        .accordion {
+            margin: 1.5rem 0;
+        }
+
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: white;
+        }
+
+        .accordion-header {
+            padding: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            font-weight: 600;
+            color: var(--primary);
+            transition: all 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-header.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #ffffff;
+        }
+
+        .accordion-content-inner {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="hero">
+            <h1>ETF US Swing Strategy</h1>
+            <p>Access the world's largest equity markets with a systematic trend following approach designed
+                specifically for US-listed ETFs.</p>
+        </header>
+
+        <section class="section-card">
+            <h2>Executive Summary</h2>
+            <p>The ETF US Swing Strategy provides automated exposure to leading global innovation and economic growth.
+                By applying SMA-based momentum filters to highly liquid US ETFs, it offers a disciplined way to
+                participate in global market trends.</p>
+
+            <div class="grid">
+                <div class="feature-item">
+                    <h4>Global Exposure</h4>
+                    <p>Directly trade SPY, QQQ, and other premier US-listed asset classes.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Deep Liquidity</h4>
+                    <p>Optimized for US market depth, ensuring tight spreads and efficient execution.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Currency Upside</h4>
+                    <p>Assets held in USD, providing a potential hedge against domestic currency risk.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Automated Guardrails</h4>
+                    <p>Integrated stop-loss and profit-locking rules specific to US market volatility.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <h2>Strategy Logic</h2>
+            <p>Signals are generated at the US market close and aimed at capturing medium-term price swings.</p>
+
+            <h3>Entry Eligibility</h3>
+            <p>Positions are initiated when an ETF shows confirmed momentum by closing above its technical average.</p>
+            <div class="formula">Daily Close (T) > SMA (T)</div>
+            <div class="formula">Preference: ETFs with the smallest positive distance from SMA.</div>
+
+            <h3>Exit Hierarchy</h3>
+            <ul>
+                <li><strong>Profit-Take:</strong> Price reverts below SMA after meeting your target threshold.</li>
+                <li><strong>Hard Stop Loss:</strong> An automatic exit signal if the asset drops beyond your risk
+                    tolerance.</li>
+                <li><strong>Dynamic Capital:</strong> Profits are automatically compounds into the next available
+                    "swing" slot.</li>
+            </ul>
+        </section>
+
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>US Market Execution</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>All trades are precisely synchronized with US Exchange hours:</p>
+                        <ul style="margin-top: 1rem;">
+                            <li><strong>Evaluation:</strong> Performance is checked at the NYSE/NASDAQ close (Night in
+                                India).</li>
+                            <li><strong>Deployment:</strong> Validated trades are executed at the subsequent US Market
+                                Open.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>Regulatory & Compliance</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>Investments follow the RBI Liberalised Remittance Scheme (LRS) framework:</p>
+                        <ul style="margin-top: 1rem;">
+                            <li>Account funding and asset holdings are managed in USD.</li>
+                            <li>Standard LRS limits for individual remittances apply.</li>
+                            <li>Automatic reporting for Tax Collected at Source (TCS) where applicable.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            &copy; 2026 WealthAI. International Markets Division. Past performance of US indices is not a guarantee of
+            future strategy returns.
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isActive = this.classList.contains('active');
+
+                document.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.nextElementSibling.style.maxHeight = null;
+                });
+
+                if (!isActive) {
+                    this.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

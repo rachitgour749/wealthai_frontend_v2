@@ -45,11 +45,16 @@ axiosInstance.interceptors.response.use(
 
             switch (status) {
                 case 401:
-                    // Unauthorized - Token expired or invalid
-                    removeToken();
-                    store.dispatch(logoutUser());
-                    // Optionally redirect to login
-                    window.location.href = '/';
+                    // Check if this is a Stockal-specific request
+                    const isStockalRequest = error.config?.url?.includes('8001') || error.config?.url?.includes('stockal');
+
+                    if (!isStockalRequest) {
+                        // Unauthorized - Token expired or invalid for main app
+                        removeToken();
+                        store.dispatch(logoutUser());
+                        // Optionally redirect to login
+                        window.location.href = '/';
+                    }
                     break;
 
                 case 403:

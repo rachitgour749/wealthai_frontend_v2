@@ -1,9 +1,10 @@
-import React from 'react';
-import { formatCurrency } from '../../../utils/formatUtils';
+﻿import React from 'react';
+import { formatCurrency, getCurrencySymbol } from '../../../utils/formatUtils';
 
-const ResultMetricCards = ({ metrics = {}, strategyType }) => {
+const ResultMetricCards = ({ metrics = {}, strategyType, strategyName }) => {
 
     const isPayout = (strategyType || '').toLowerCase().includes('payout');
+    const currencySymbol = getCurrencySymbol(strategyType, strategyName);
 
     // Handle both old and new API response structures
     // New structure: metrics.strategy
@@ -58,15 +59,12 @@ const ResultMetricCards = ({ metrics = {}, strategyType }) => {
 
         // Handle withdraw amount (currency) - Check this FIRST to catch strings too
         if (k.includes('withdraw')) {
-            const t = (strategyType || '').toLowerCase();
-            const symbol = (t === 'etf_us' || t.includes('international')) ? '$' : '₹';
-            return formatCurrency(val, symbol);
+            return formatCurrency(val, currencySymbol);
         }
 
         // If the value is already a string (like "61.10%"), just return it
         if (typeof val === 'string') {
-            const t = (strategyType || '').toLowerCase();
-            if (t === 'etf_us' || t.includes('international')) {
+            if (currencySymbol === '$') {
                 return val.replace('₹', '$');
             }
             return val;

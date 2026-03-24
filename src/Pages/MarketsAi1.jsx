@@ -1,6 +1,6 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectProducts } from '../store/slices/subscriptionSlice'
+import { selectProducts, selectSubscriptionLoading } from '../store/slices/subscriptionSlice'
 import { selectUserEmail } from '../store/slices/userSlice'
 import { selectCurrentTab, selectCurrentStrategy, setCurrentTab, setCurrentStrategy } from '../store/slices/navigationSlice'
 import { formatDate, getSubscriptionByProduct } from '../utils/dateUtils'
@@ -12,6 +12,9 @@ import RS_ETF from '../Strategies/RS_ETF'
 import ETF_Payout from '../Strategies/ETF_Payout'
 import ETF_US from '../Strategies/ETF_US'
 import ETF_Swing from '../Strategies/ETF_Swing'
+import ETF_US_Swing from '../Strategies/ETF_US_Swing'
+import SuperTrend from '../Strategies/SuperTrend'
+import SuperTrendUS from '../Strategies/SuperTrendUS'
 import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
 import Stock from '../Strategies/Stock'
@@ -21,6 +24,7 @@ import { useEffect } from 'react'
 import Stockal from '../Components/Stockal/Stockal'
 import { validateStockalUser } from '../store/slices/stockalSlice'
 import { showNotification } from '../store/slices/uiSlice'
+import Webhook from '../Components/Webhook/Webhook'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -30,6 +34,7 @@ const MarketsAi1 = () => {
   const userEmail = useSelector(selectUserEmail)
   const hasSavedCredentialsState = useSelector(selectHasSavedCredentials)
   const isBrokerConnected = useSelector(selectIsBrokerConnected)
+  const isSubscriptionLoading = useSelector(selectSubscriptionLoading)
 
   // Robust check combining Redux and LocalStorage for zero-latency UI updates
   const hasSavedCredentials = hasSavedCredentialsState || localStorage.getItem('wealthai_has_broker') === 'true';
@@ -87,6 +92,12 @@ const MarketsAi1 = () => {
         return <ETF_US onBack={handleBackToStrategies} />
       case 'etf-swing-strategy':
         return <ETF_Swing onBack={handleBackToStrategies} />
+      case 'etf-us-swing-strategy':
+        return <ETF_US_Swing onBack={handleBackToStrategies} />
+      case 'SuperTrend':
+        return <SuperTrend onBack={handleBackToStrategies} />
+      case 'SuperTrend-us':
+        return <SuperTrendUS onBack={handleBackToStrategies} />
       case 'custom-strategy':
         return <CustomStrategies onBack={handleBackToStrategies} />
       default:
@@ -108,6 +119,8 @@ const MarketsAi1 = () => {
         return <AddBroker isInline={true} />
       case 'Stockal':
         return <Stockal isInline={true} />
+      case 'Webhook':
+        return <Webhook />
       default:
         return <Strategies />
     }
@@ -118,10 +131,25 @@ const MarketsAi1 = () => {
       { label: 'Strategies', value: 'Strategies' },
       { label: 'My Portfolio', value: 'MyPortfolio' },
       { label: 'Account Config', value: 'AddBroker' },
-      // { label: 'Stockal', value: 'Stockal' },
+      // { label: 'Borderless', value: 'Stockal' },
+      { label: 'Webhook', value: 'Webhook' },
     ];
   }, []);
 
+
+  // Show global loading if subscription data is being fetched for the first time
+  if (isSubscriptionLoading && (!subscriptionProducts || subscriptionProducts.length === 0)) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-gradient-to-tr from-[#d3edeb] to-[#fcf6ee]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-wealth-800 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-wealth-800 font-bold animate-pulse text-sm uppercase tracking-widest">
+            Loading Your Profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='p-1 md:p-4'>
@@ -165,7 +193,7 @@ const MarketsAi1 = () => {
         </div>
 
       </div>
-      <div className={`h-[calc(100vh-135px)] md:h-[calc(100vh-140px)] p-1 md:p-4 overflow-y-auto shadow-[0_10px_20px_rgba(0,0,0,0.25),0_6px_6px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] border border-slate-400 ${currentTab === 'Strategies' ? 'rounded-b-[10px]' : 'rounded-tl-[10px] rounded-b-[10px]'}`}>
+      <div className={`h-[calc(100vh-135px)] md:h-[calc(100vh-140px)] p-1 md:p-2 overflow-y-auto shadow-[0_10px_20px_rgba(0,0,0,0.25),0_6px_6px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] border border-slate-400 ${currentTab === 'Strategies' ? 'rounded-b-[10px]' : 'rounded-tl-[10px] rounded-b-[10px]'}`}>
         {renderTab()}
       </div>
 

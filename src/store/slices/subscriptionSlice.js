@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as subscriptionService from '../../api/services/subscriptionService';
 
-// Async Thunks
-
 /**
  * Fetch all products with subscription status
  */
@@ -45,9 +43,28 @@ export const activateTrial = createAsyncThunk(
             // Refresh products after trial activation
             await dispatch(fetchProducts(email));
 
+            // Refresh credits after trial activation
+            await dispatch(fetchCredits(email));
+
             return result;
         } catch (error) {
             return rejectWithValue(error.message || 'Failed to activate trial');
+        }
+    }
+);
+
+/**
+ * Fetch user credits information
+ */
+export const fetchCredits = createAsyncThunk(
+    'subscription/fetchCredits',
+    async (email, { rejectWithValue }) => {
+        try {
+            const response = await subscriptionService.getCredits(email);
+            // The response.data might be the credit object directly or nested
+            return response.data || response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch credits');
         }
     }
 );
@@ -56,6 +73,11 @@ export const activateTrial = createAsyncThunk(
 const initialState = {
     products: [],
     userSubscription: null,
+    credits: {
+        total_credits: 0,
+        used_credits: 0,
+        remaining_credits: 0
+    },
     loading: false,
     error: null,
     trialActivating: false,
@@ -79,15 +101,25 @@ const subscriptionSlice = createSlice({
             state.shouldShowTrial = action.payload;
         },
 
+        // Update credits manually
+        setCredits: (state, action) => {
+            state.credits = action.payload;
+        },
+
         // Clear subscription data (on logout)
         clearSubscriptionData: (state) => {
             state.products = [];
             state.userSubscription = null;
+            state.credits = {
+                total_credits: 0,
+                used_credits: 0,
+                remaining_credits: 0
+            };
             state.error = null;
             state.shouldShowTrial = false;
             state.showPaymentPopup = false;
         },
-        // Set payment popup visibility
+        // ... (rest of the reducers remain same)
         setPaymentPopup: (state, action) => {
             state.showPaymentPopup = action.payload;
         },
@@ -139,6 +171,21 @@ const subscriptionSlice = createSlice({
                 state.error = action.payload;
             });
 
+        // Fetch Credits
+        builder
+            .addCase(fetchCredits.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchCredits.fulfilled, (state, action) => {
+                state.loading = false;
+                state.credits = action.payload;
+            })
+            .addCase(fetchCredits.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
+
         // Activate Trial
         builder
             .addCase(activateTrial.pending, (state) => {
@@ -160,6 +207,7 @@ const subscriptionSlice = createSlice({
 export const {
     setProducts,
     setShouldShowTrial,
+    setCredits,
     clearSubscriptionData,
     clearError,
     setPaymentPopup,
@@ -169,6 +217,7 @@ export const {
 // Selectors
 export const selectProducts = (state) => state.subscription.products;
 export const selectUserSubscription = (state) => state.subscription.userSubscription;
+export const selectCredits = (state) => state.subscription.credits;
 export const selectSubscriptionLoading = (state) => state.subscription.loading;
 export const selectSubscriptionError = (state) => state.subscription.error;
 export const selectShouldShowTrial = (state) => state.subscription.shouldShowTrial;

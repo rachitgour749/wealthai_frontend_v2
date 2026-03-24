@@ -8,6 +8,7 @@ import {
     selectBacktestStatus,
     selectBacktestResults
 } from '../../store/slices/strategySlice';
+import { fetchCredits, selectCredits } from '../../store/slices/subscriptionSlice';
 import {
     showNotification,
     setViewMode,
@@ -60,9 +61,9 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
     const instancesCount = useSelector(selectInstancesCount);
     const backtestStatus = useSelector(selectBacktestStatus);
     const backtestResults = useSelector(selectBacktestResults);
+    const credits = useSelector(selectCredits);
     const viewMode = useSelector(selectViewMode);
 
-    // Helper to get string value from an ETF option (handles strings or objects)
     const getSymbol = (opt) => {
         if (!opt) return '';
         if (typeof opt === 'string') return opt;
@@ -80,50 +81,39 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             });
             setParamValues(initialParams);
 
-            // Fetch dynamic data from API
             const fetchInitialData = async () => {
                 try {
                     setLoading(true);
-                    console.log(`[StrategyTemplate] Fetching data for: ${strategy.strategy_type}`);
+                    console.log(`[StrategyTemplate] Fetching data for: ${strategy.strategy_type} (market=${strategy.market}, asset_type=${strategy.asset_type})`);
 
-                    // Use ETF_Rotation assets/overview for ETF_Swing_Strategy
-                    const assetStrategyType = strategy.strategy_type === 'ETF_Swing_Strategy'
-                        ? 'ETF_Rotation'
-                        : strategy.strategy_type;
+                    // Use market + asset_type from config (new API format)
+                    const market = strategy.market || 'INDIA';
+                    const assetType = strategy.asset_type || 'ETF';
 
                     let [assets, overview] = await Promise.all([
-                        strategyService.fetchAssets(assetStrategyType),
-                        strategyService.fetchAssetsOverview(assetStrategyType)
+                        strategyService.fetchAssets(market, assetType),
+                        strategyService.fetchAssetsOverview(market, assetType)
                     ]);
 
                     const findArray = (data, preferredKeys = []) => {
                         if (Array.isArray(data)) return data;
                         if (!data || typeof data !== 'object') return [];
 
-                        // 1. Check preferred keys
                         for (const key of preferredKeys) {
                             if (Array.isArray(data[key])) return data[key];
                         }
 
-                        // 2. Check if the object itself is a dictionary-style array (e.g., {"0": {...}, "1": {...}})
                         const values = Object.values(data);
                         const looksLikeCollection = values.length > 0 && values.every(v =>
                             v && typeof v === 'object' && (v.symbol || v.ticker || v.name || v.label)
                         );
-                        if (looksLikeCollection) {
-                            console.log('[StrategyTemplate] Found dictionary-style collection');
-                            return values;
-                        }
+                        if (looksLikeCollection) return values;
 
-                        // 3. Strategy specific key
                         if (Array.isArray(data[strategy.strategy_type])) return data[strategy.strategy_type];
 
-                        // 4. Look deeper
                         for (const key in data) {
                             if (data[key] && typeof data[key] === 'object') {
                                 if (Array.isArray(data[key])) return data[key];
-
-                                // Check if nested object is a collection
                                 const nestedValues = Object.values(data[key]);
                                 if (nestedValues.length > 0 && nestedValues.every(v => v && typeof v === 'object' && (v.symbol || v.ticker))) {
                                     return nestedValues;
@@ -139,27 +129,11 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     let rawAssets = findArray(assets, ['assets', 'data', 'tickers', 'overview', 'items']);
                     let rawOverview = findArray(overview, ['options', 'overview', 'data', 'tickers', 'assets', 'items']);
 
-                    // Fallback logic for RS_ETF_Rotation if data is missing
-                    if (strategy.strategy_type === 'RS_ETF_Rotation' && rawAssets.length === 0 && rawOverview.length === 0) {
-                        console.log('[StrategyTemplate] RS_ETF_Rotation returned no data, falling back to ETF_Rotation');
-                        const [fallbackAssets, fallbackOverview] = await Promise.all([
-                            strategyService.fetchAssets('ETF_Rotation'),
-                            strategyService.fetchAssetsOverview('ETF_Rotation')
-                        ]);
-                        assets = fallbackAssets;
-                        overview = fallbackOverview;
-                        rawAssets = findArray(assets, ['assets', 'data', 'tickers', 'overview']);
-                        rawOverview = findArray(overview, ['options', 'overview', 'data', 'tickers', 'assets']);
-                    }
-
-                    // Decide which one has details (sector, years)
-                    // Decide which one has details (sector, years)
                     const hasDetails = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].sector || arr[0].years_available || arr[0].years);
                     const hasYears = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].years_available !== undefined || arr[0].years !== undefined);
                     const hasSector = (arr) => arr.length > 0 && typeof arr[0] === 'object' && (arr[0].sector || arr[0].industry || arr[0].group);
 
                     let bestSourceForTable = rawAssets;
-                    // Prefer overview if it has better data (years or sector) than assets
                     if (
                         (hasYears(rawOverview) && !hasYears(rawAssets)) ||
                         (hasSector(rawOverview) && !hasSector(rawAssets)) ||
@@ -168,7 +142,6 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                         bestSourceForTable = rawOverview;
                     }
 
-                    // Normalize assets for the Available ETFs table
                     const normalizedAssets = bestSourceForTable.map(item => {
                         if (typeof item === 'string') return { symbol: item, sector: '-', years: '-' };
                         return {
@@ -178,8 +151,6 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                         };
                     });
 
-                    // Normalize overview for the dropdown selection
-                    // If rawOverview is empty, fallback to rawAssets symbols
                     let normalizedOverview = rawOverview.map(item => getSymbol(item)).filter(s => s !== '');
                     if (normalizedOverview.length === 0 && normalizedAssets.length > 0) {
                         normalizedOverview = normalizedAssets.map(a => a.symbol).filter(s => s && s !== '-');
@@ -189,7 +160,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                 } catch (error) {
                     setAvailableETFs(strategy.available_etfs || []);
                     setUniverseOptions(strategy.universe_selection.options || []);
-                    setSelectedETFs([]); // Initialize with empty selection instead of slice(0, 2)
+                    setSelectedETFs([]);
                 } finally {
                     setLoading(false);
                 }
@@ -211,18 +182,18 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
         }
     };
 
-    // Fetch instances whenever strategy or user changes
     useEffect(() => {
         fetchInstances();
     }, [config, user?.email, dispatch]);
 
-    // Fetch date range whenever selection changes
     useEffect(() => {
         if (config) {
             if (selectedETFs.length > 0) {
                 const fetchDates = async () => {
                     try {
-                        const range = await strategyService.fetchDateRange(config.strategy_type, selectedETFs);
+                        const market = config.market || 'INDIA';
+                        const assetsType = config.asset_type || 'ETF';
+                        const range = await strategyService.fetchDateRange(market, assetsType, selectedETFs);
                         setDateRange(range);
                     } catch (error) {
                         console.error('[StrategyTemplate] Error fetching date range:', error);
@@ -231,7 +202,6 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                 };
                 fetchDates();
             } else {
-                // Reset date range when no ETFs are selected
                 setDateRange(null);
             }
         }
@@ -240,45 +210,35 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
     const handleParamChange = (id, value) => {
         setParamValues(prev => {
             const next = { ...prev, [id]: value };
-
-            // Special logic for ETF_Payout: If withdrawAmountPerWeek is 0, payoutStartWeek should be 0
             if (config?.strategy_type === 'ETF_Payout') {
                 if (id === 'withdrawAmountPerWeek' && Number(value) === 0) {
                     next.payoutStartWeek = 0;
                 }
             }
-
             return next;
         });
-        setBacktestStarted(false); // Reset backtest state on change
+        setBacktestStarted(false);
     };
 
     const handleETFChange = (newETFs) => {
         setSelectedETFs(newETFs);
-        setBacktestStarted(false); // Reset backtest state on change
+        setBacktestStarted(false);
     };
 
-    const handleBackToSetup = () => {
-        dispatch(setViewMode('config'));
-    };
+    const handleBackToSetup = () => dispatch(setViewMode('config'));
 
     const handleNewBacktest = () => {
         dispatch(resetBacktest());
         dispatch(setViewMode('config'));
         setBacktestStarted(false);
         setBacktestPayload(null);
-
-        // Reset inputs
         setSelectedETFs([]);
         setUseCustomDate(false);
         setCustomDateRange({ start: '', end: '' });
 
-        // Reset parameters to defaults
         if (config && config.parameters) {
             const initialParams = {};
-            config.parameters.forEach(p => {
-                initialParams[p.id] = p.defaultValue;
-            });
+            config.parameters.forEach(p => { initialParams[p.id] = p.defaultValue; });
             setParamValues(initialParams);
         }
     };
@@ -292,23 +252,15 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
     };
 
     const handleLoadInstance = (instance) => {
-        // Close the modal first
         setIsInstancesModalOpen(false);
 
-        // Parse tickers if they're in string format
-        let tickers = instance.tickers;
+        let tickers = instance.tickers || instance.symbols || instance.symbol;
         if (typeof tickers === 'string') {
-            try {
-                tickers = JSON.parse(tickers);
-            } catch (e) {
-                tickers = tickers.split(',').map(t => t.trim());
-            }
+            try { tickers = JSON.parse(tickers); }
+            catch (e) { tickers = tickers.split(',').map(t => t.trim()); }
         }
-
-        // Set the selected ETFs
         setSelectedETFs(Array.isArray(tickers) ? tickers : []);
 
-        // Set custom date range if available
         if (instance.start_date && instance.end_date) {
             setUseCustomDate(true);
             setCustomDateRange({
@@ -317,17 +269,12 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             });
         }
 
-        // Populate strategy parameters from strategies_parameters
         if (instance.strategies_parameters) {
             const params = instance.strategies_parameters;
             const newParamValues = {};
-
-            // Map the saved parameters to the form fields
-            // Common parameters
             if (params.brokerage_percent !== undefined) newParamValues.brokerage = params.brokerage_percent;
             if (params.risk_free_rate !== undefined) newParamValues.riskFreeRate = params.risk_free_rate;
-
-            // Strategy-specific parameters
+            if (params.risk_level !== undefined) newParamValues.riskFreeRate = params.risk_level;
             if (params.capital_per_week !== undefined) newParamValues.totalCapitalPerWeek = params.capital_per_week;
             if (params.accumulation_weeks !== undefined) newParamValues.accumulationWeeks = params.accumulation_weeks;
             if (params.withdraw_amount !== undefined) newParamValues.withdrawAmountPerWeek = params.withdraw_amount;
@@ -337,86 +284,52 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             if (params.stop_loss !== undefined) newParamValues.stopLoss = params.stop_loss;
             if (params.buffer_capital !== undefined) newParamValues.bufferCapital = params.buffer_capital;
             if (params.compounding_threshold !== undefined) newParamValues.compoundingThreshold = params.compounding_threshold;
-
-            // ETF Swing Strategy parameters
+            if (params.compound_threshold !== undefined) newParamValues.compoundingThreshold = params.compound_threshold;
             if (params.initial_capital !== undefined) newParamValues.initial_capital = params.initial_capital;
             if (params.sma_lookback !== undefined) newParamValues.sma_lookback = params.sma_lookback;
             if (params.stop_loss_pct !== undefined) newParamValues.stop_loss_pct = params.stop_loss_pct;
             if (params.profit_threshold_pct !== undefined) newParamValues.profit_threshold_pct = params.profit_threshold_pct;
             if (params.number_of_slots !== undefined) newParamValues.number_of_slots = params.number_of_slots;
-
+            if (params.atr_multiplier !== undefined) newParamValues.atr_multiplier = params.atr_multiplier;
+            if (params.atr_period !== undefined) newParamValues.atr_period = params.atr_period;
             setParamValues(newParamValues);
         }
 
-        // Reset backtest state
         setBacktestStarted(false);
         dispatch(resetBacktest());
         dispatch(setViewMode('config'));
-
-        // Show success notification
-        dispatch(showNotification({
-            message: `Loaded strategy: ${instance.strategy_name || 'Saved Instance'}`,
-            type: 'success'
-        }));
+        dispatch(showNotification({ message: `Loaded strategy: ${instance.strategy_name || 'Saved Instance'}`, type: 'success' }));
     };
 
     const handleLoadCombination = (combination) => {
-        // Close modal
         setIsBestCombinationsModalOpen(false);
-
-        // Set tickers
         setSelectedETFs(combination.tickers);
-
-        // Set date range
         if (combination.startDate && combination.endDate) {
             setUseCustomDate(true);
-            setCustomDateRange({
-                start: combination.startDate,
-                end: combination.endDate
-            });
+            setCustomDateRange({ start: combination.startDate, end: combination.endDate });
         }
-
-        // Set parameters
         if (combination.parameters) {
             const newValues = { ...paramValues };
-            Object.keys(combination.parameters).forEach(key => {
-                newValues[key] = combination.parameters[key];
-            });
+            Object.keys(combination.parameters).forEach(key => { newValues[key] = combination.parameters[key]; });
             setParamValues(newValues);
         }
-
-        // Reset backtest state
         setBacktestStarted(false);
         dispatch(resetBacktest());
-
-        // Show success notification
-        dispatch(showNotification({
-            message: `Applied combination: ${combination.name}`,
-            type: 'success'
-        }));
+        dispatch(showNotification({ message: `Applied combination: ${combination.name}`, type: 'success' }));
     };
 
     const handleRunBacktest = async () => {
         if (!config) return;
 
-        // Validations
-        // 1. Minimum 5 ETFs requirement
         if (selectedETFs.length < 5) {
-            dispatch(showNotification({
-                message: 'It is mandatory to select at least 5 symbols to run a backtest.',
-                type: 'warning'
-            }));
+            dispatch(showNotification({ message: 'It is mandatory to select at least 5 symbols to run a backtest.', type: 'warning' }));
             return;
         }
 
-        // 2. Strategy specific validations
         const accWeeks = Number(paramValues.accumulationWeeks);
         if (['ETF_Rotation', 'International_ETF_Rotation', 'Stock_Rotation', 'ETF_Payout'].includes(config.strategy_type)) {
             if (accWeeks < 10) {
-                dispatch(showNotification({
-                    message: 'Accumulation Weeks cannot be less than 10.',
-                    type: 'warning'
-                }));
+                dispatch(showNotification({ message: 'Accumulation Weeks cannot be less than 10.', type: 'warning' }));
                 return;
             }
         }
@@ -425,10 +338,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             const payoutWeek = Number(paramValues.payoutStartWeek);
             const withdrawAmount = Number(paramValues.withdrawAmountPerWeek);
             if (withdrawAmount > 0 && payoutWeek <= accWeeks) {
-                dispatch(showNotification({
-                    message: `Payout Start Week (${payoutWeek}) must be greater than Accumulation Weeks (${accWeeks}).`,
-                    type: 'warning'
-                }));
+                dispatch(showNotification({ message: `Payout Start Week (${payoutWeek}) must be greater than Accumulation Weeks (${accWeeks}).`, type: 'warning' }));
                 return;
             }
         }
@@ -436,45 +346,30 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
         if (config.strategy_type === 'RS_ETF_Rotation') {
             const noOfPositions = Number(paramValues.noOfPositions);
             if (noOfPositions > selectedETFs.length) {
-                dispatch(showNotification({
-                    message: `No. of Positions (${noOfPositions}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`,
-                    type: 'warning'
-                }));
+                dispatch(showNotification({ message: `No. of Positions (${noOfPositions}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`, type: 'warning' }));
                 return;
             }
         }
 
-        if (config.strategy_type === 'ETF_Swing_Strategy') {
+        if (config.strategy_type === 'ETF_Swing_Strategy' || config.strategy_type === 'US_ETF_Swing_Strategy') {
             const smaLookback = Number(paramValues.sma_lookback);
             if (smaLookback > 250) {
-                dispatch(showNotification({
-                    message: `SMA Lookback should not be greater than 250.`,
-                    type: 'warning'
-                }));
+                dispatch(showNotification({ message: `SMA Lookback should not be greater than 250.`, type: 'warning' }));
                 return;
             }
-
             const slots = Number(paramValues.number_of_slots);
             if (slots > selectedETFs.length) {
-                dispatch(showNotification({
-                    message: `Number of Slots (${slots}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`,
-                    type: 'warning'
-                }));
+                dispatch(showNotification({ message: `Number of Slots (${slots}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`, type: 'warning' }));
                 return;
             }
         }
 
-        // Cleanup any existing controller
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-
+        if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
         setBacktestStarted(true);
         dispatch(runBacktestRequest());
 
         try {
-            // Determine date range: Use custom if selected, else use default available period
             const startStr = useCustomDate && customDateRange.start
                 ? customDateRange.start
                 : dateRange?.start_date?.split('T')[0];
@@ -483,40 +378,68 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                 ? customDateRange.end
                 : dateRange?.end_date?.split('T')[0];
 
-            // Core Payload (Common)
-            const payload = {
-                strategy_type: config.strategy_type,
-                start_date: startStr,
-                end_date: endStr,
-                tickers: selectedETFs,
-                brokerage_percent: paramValues.brokerage !== undefined ? Number(paramValues.brokerage) : 0,
-                risk_free_rate: paramValues.riskFreeRate !== undefined ? Number(paramValues.riskFreeRate) : 6.0,
-                compounding_enabled: false,
-            };
+            let payload = {};
 
-            // Strategy-Specific Mappings
-            if (config.strategy_type === 'ETF_Rotation' || config.strategy_type === 'International_ETF_Rotation' || config.strategy_type === 'Stock_Rotation') {
-                payload.capital_per_week = Number(paramValues.totalCapitalPerWeek);
-                payload.accumulation_weeks = Number(paramValues.accumulationWeeks);
-            } else if (config.strategy_type === 'ETF_Payout') {
-                payload.capital_per_week = Number(paramValues.totalCapitalPerWeek);
-                payload.accumulation_weeks = Number(paramValues.accumulationWeeks);
-                payload.withdraw_amount = Number(paramValues.withdrawAmountPerWeek);
-                payload.payout_start_week = Number(paramValues.payoutStartWeek);
-            } else if (config.strategy_type === 'RS_ETF_Rotation') {
-                payload.no_of_positions = Number(paramValues.noOfPositions);
-                payload.total_capital = Number(paramValues.totalCapital);
-                payload.stop_loss = Number(paramValues.stopLoss);
-                payload.buffer_capital = Number(paramValues.bufferCapital);
-                payload.stop_loss = Number(paramValues.stopLoss);
-                payload.buffer_capital = Number(paramValues.bufferCapital);
-                payload.compounding_threshold = Number(paramValues.compoundingThreshold);
-            } else if (config.strategy_type === 'ETF_Swing_Strategy') {
-                payload.initial_capital = Number(paramValues.initial_capital);
-                payload.sma_lookback = Number(paramValues.sma_lookback);
-                payload.stop_loss_pct = Number(paramValues.stop_loss_pct);
-                payload.profit_threshold_pct = Number(paramValues.profit_threshold_pct);
-                payload.number_of_slots = Number(paramValues.number_of_slots);
+            if (config.strategy_type === 'SuperTrend') {
+                payload = {
+                    strategy_type: config.strategy_type,
+                    start_date: startStr,
+                    end_date: endStr,
+                    tickers: selectedETFs,
+                    initial_capital: Number(paramValues.initial_capital),
+                    risk_free_rate: Number(paramValues.riskFreeRate),
+                    parameters: {
+                        market: config.market || 'INDIA',
+                        asset_type: config.asset_type || 'ETF',
+                        atr_multiplier: Number(paramValues.atr_multiplier),
+                        atr_period: Number(paramValues.atr_period),
+                        stop_loss_pct: Number(paramValues.stop_loss_pct),
+                        number_of_slots: Number(paramValues.number_of_slots),
+                        brokerage_percent: paramValues.brokerage !== undefined ? Number(paramValues.brokerage) : 0,
+                    }
+                };
+            } else if (config.strategy_type === 'ETF_Swing_Strategy' || config.strategy_type === 'US_ETF_Swing_Strategy') {
+                // Exact payload the backend expects — no extra fields
+                payload = {
+                    strategy_type: config.strategy_type,
+                    start_date: startStr,
+                    end_date: endStr,
+                    tickers: selectedETFs,
+                    initial_capital: Number(paramValues.initial_capital),
+                    sma_lookback: Number(paramValues.sma_lookback),
+                    stop_loss_pct: Number(paramValues.stop_loss_pct),
+                    profit_threshold_pct: Number(paramValues.profit_threshold_pct),
+                    number_of_slots: Number(paramValues.number_of_slots),
+                    risk_free_rate: Number(paramValues.riskFreeRate),
+                    brokerage_percent: paramValues.brokerage !== undefined ? Number(paramValues.brokerage) : 0,
+                };
+            } else {
+                // Core payload for all other strategies
+                payload = {
+                    strategy_type: config.strategy_type,
+                    start_date: startStr,
+                    end_date: endStr,
+                    tickers: selectedETFs,
+                    brokerage_percent: paramValues.brokerage !== undefined ? Number(paramValues.brokerage) : 0,
+                    risk_free_rate: paramValues.riskFreeRate !== undefined ? Number(paramValues.riskFreeRate) : 6.0,
+                    compounding_enabled: false,
+                };
+
+                if (config.strategy_type === 'ETF_Rotation' || config.strategy_type === 'International_ETF_Rotation' || config.strategy_type === 'Stock_Rotation') {
+                    payload.capital_per_week = Number(paramValues.totalCapitalPerWeek);
+                    payload.accumulation_weeks = Number(paramValues.accumulationWeeks);
+                } else if (config.strategy_type === 'ETF_Payout') {
+                    payload.capital_per_week = Number(paramValues.totalCapitalPerWeek);
+                    payload.accumulation_weeks = Number(paramValues.accumulationWeeks);
+                    payload.withdraw_amount = Number(paramValues.withdrawAmountPerWeek);
+                    payload.payout_start_week = Number(paramValues.payoutStartWeek);
+                } else if (config.strategy_type === 'RS_ETF_Rotation') {
+                    payload.no_of_positions = Number(paramValues.noOfPositions);
+                    payload.total_capital = Number(paramValues.totalCapital);
+                    payload.stop_loss = Number(paramValues.stopLoss);
+                    payload.buffer_capital = Number(paramValues.bufferCapital);
+                    payload.compounding_threshold = Number(paramValues.compoundingThreshold);
+                }
             }
 
             console.log(`[StrategyTemplate] Triggering backtest for ${config.strategy_type}:`, payload);
@@ -527,6 +450,12 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             if (results) {
                 dispatch(runBacktestSuccess(results));
                 dispatch(showNotification({ message: 'Backtest completed successfully!', type: 'success' }));
+
+                // Refresh credits after successful backtest
+                if (user?.email) {
+                    dispatch(fetchCredits(user.email));
+                }
+
                 dispatch(setViewMode('results'));
                 console.log('[StrategyTemplate] Backtest Results Received:', results);
             }
@@ -536,59 +465,32 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             } else {
                 console.error('[StrategyTemplate] Backtest execution failed:', error);
                 dispatch(runBacktestFailure(error.message || 'Backtest execution failed'));
-                dispatch(showNotification({
-                    message: `Backtest Failed: ${error.message || 'Server error'}`,
-                    type: 'error'
-                }));
+                dispatch(showNotification({ message: `Backtest Failed: ${error.message || 'Server error'}`, type: 'error' }));
             }
         } finally {
             abortControllerRef.current = null;
         }
     };
 
-    const isStep1Complete = true; // Strategy opened
+    const isStep1Complete = true;
     const isStep2Complete = selectedETFs.length > 0;
     const isStep3Complete = backtestStarted;
 
-    // Handle date input changes - allow free editing
     const handleCustomDateChange = (type, value) => {
         setCustomDateRange(prev => ({ ...prev, [type]: value }));
         setBacktestStarted(false);
     };
 
-    // Validate date when user leaves the input field
     const handleCustomDateBlur = (type, value) => {
         if (!dateRange || !value) return;
-
-        // Get the available date range boundaries
         const availableStart = dateRange.start_date?.split('T')[0];
         const availableEnd = dateRange.end_date?.split('T')[0];
-
-        // Validate and clamp the input date
         let validatedDate = value;
-
-        if (value < availableStart) {
-            // If entered date is before available start, use available start
-            validatedDate = availableStart;
-        } else if (value > availableEnd) {
-            // If entered date is after available end, use available end
-            validatedDate = availableEnd;
-        }
-
-        // Additional validation for "end" date to ensure it's not before "start" date
-        if (type === 'end' && customDateRange.start && validatedDate < customDateRange.start) {
-            validatedDate = customDateRange.start;
-        }
-
-        // Additional validation for "start" date to ensure it's not after "end" date
-        if (type === 'start' && customDateRange.end && validatedDate > customDateRange.end) {
-            validatedDate = customDateRange.end;
-        }
-
-        // Only update if the date changed after validation
-        if (validatedDate !== value) {
-            setCustomDateRange(prev => ({ ...prev, [type]: validatedDate }));
-        }
+        if (value < availableStart) validatedDate = availableStart;
+        else if (value > availableEnd) validatedDate = availableEnd;
+        if (type === 'end' && customDateRange.start && validatedDate < customDateRange.start) validatedDate = customDateRange.start;
+        if (type === 'start' && customDateRange.end && validatedDate > customDateRange.end) validatedDate = customDateRange.end;
+        if (validatedDate !== value) setCustomDateRange(prev => ({ ...prev, [type]: validatedDate }));
     };
 
     if (!config || loading) return (
@@ -632,7 +534,6 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     />
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mt-[-1px] p-4 md:p-[20px] border border-gray-300">
-                        {/* Left Column (8 units) */}
                         <div className="lg:col-span-6 flex flex-col gap-6 h-full">
                             <ETFUniverseSelection
                                 {...config.universe_selection}
@@ -648,7 +549,6 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                             />
                         </div>
 
-                        {/* Right Column (4 units) */}
                         <div className="lg:col-span-6 h-full">
                             <StrategyParameters
                                 parameters={config.parameters}
@@ -660,11 +560,9 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                                 onCancelBacktest={handleCancelBacktest}
                                 backtestStatus={backtestStatus}
                                 useCustomDate={useCustomDate}
-                                isBacktestDisabled={selectedETFs.length < 5}
-                                onUseCustomDateChange={(val) => {
-                                    setUseCustomDate(val);
-                                    setBacktestStarted(false);
-                                }}
+                                isBacktestDisabled={selectedETFs.length < 5 || (credits && credits.remaining_credits <= 0)}
+                                showCreditWarning={credits && credits.remaining_credits <= 0}
+                                onUseCustomDateChange={(val) => { setUseCustomDate(val); setBacktestStarted(false); }}
                                 customDateRange={customDateRange}
                                 onCustomDateChange={handleCustomDateChange}
                                 onCustomDateBlur={handleCustomDateBlur}

@@ -1,128 +1,191 @@
 export const strategies = [
-  {
-    id: 'etf-strategy',
-    name: 'ETF Rotation',
-    description: 'Mean Reversion & Low Volatility ETFs rotation strategy',
-    gradient: 'from-emerald-400 via-teal-500 to-cyan-600',
-    borderColor: 'border-emerald-400',
-    available: true,
-    category: 'Active',
-    tags: ['Mean Reversion', 'Low Volatility']
-  },
-  {
-    id: 'stock-strategy',
-    name: 'Stock Rotation',
-    description: 'Mean Reversion & Low Volatility Stocks rotation strategy',
-    gradient: 'from-orange-200 to-orange-300',
-    borderColor: 'border-orange-200',
-    available: false,
-    category: 'Active',
-    tags: ['Mean Reversion', 'Low Volatility']
-  },
-  {
-    id: 'RS-ETF-strategy',
-    name: 'RS ETF',
-    description: 'Relative Strength based ETF trading strategy',
-    gradient: 'from-purple-200 to-purple-300',
-    borderColor: 'border-purple-200',
-    available: true,
-    category: 'Active',
-    tags: ['Momentum-based', 'Trend Following']
-  },
-  {
-    id: 'RS-strategy',
-    name: 'RS Stock',
-    description: 'Relative Strength based stock trading strategy',
-    gradient: 'from-blue-200 to-blue-300',
-    borderColor: 'border-blue-200',
-    available: false,
-    category: 'Active',
-    tags: ['Momentum-based', 'Trend Following']
-  },
-
-  {
-    id: 'SuperTrend',
-    name: 'SuperTrend Strategy',
-    description: 'Momentum-based Trend Following System using SuperTrend indicator',
-    gradient: 'from-rose-200 to-rose-300',
-    borderColor: 'border-rose-200',
-    available: false,
-    category: 'Active',
-    tags: ['Momentum-based', 'Trend Following']
-  },
-  {
-    id: 'etf-strategy-payout',
-    name: 'ETF Rotation Payout',
-    description: 'Mean Reversion & Low Volatility ETFs rotation strategy',
-    gradient: 'from-orange-200 to-orange-300',
-    borderColor: 'border-orange-200',
-    available: true,
-    category: 'Active',
-    tags: ['Mean Reversion', 'Low Volatility']
-  },
-  {
-    id: 'etf-strategy-us',
-    name: 'ETF US Rotation',
-    description: 'Mean Reversion & Low Volatility ETFs rotation strategy',
-    gradient: 'from-cyan-200 to-cyan-300',
-    borderColor: 'border-cyan-200',
-    available: true,
-    category: 'Active',
-    tags: ['Mean Reversion', 'Low Volatility']
-  },
-  {
-    id: 'adaptive-trend',
-    name: 'Adaptive Trend Following',
-    description: 'Self-adjusting trend identification with ML optimization',
-    gradient: 'from-emerald-200 to-emerald-300',
-    borderColor: 'border-emerald-200',
-    available: false,
-    tags: ['Trend Following', 'Momentum-based']
-  },
-  {
-    id: 'ml-breakouts',
-    name: 'ML Breakout Detection',
-    description: 'Machine learning powered breakout pattern recognition',
-    gradient: 'from-amber-200 to-amber-300',
-    borderColor: 'border-amber-200',
-    available: false,
-    tags: ['Momentum-based']
-  },
-  {
-    id: 'dynamic-risk',
-    name: 'Dynamic Risk Parity',
-    description: 'Real-time risk allocation using volatility forecasting',
-    gradient: 'from-indigo-200 to-indigo-300',
-    borderColor: 'border-indigo-200',
-    available: false,
-    tags: ['Low Volatility']
-  },
-  {
-    id: 'algo-pairs',
-    name: 'Algorithmic Pairs Trading',
-    description: 'Statistical arbitrage with cointegration analysis',
-    gradient: 'from-rose-200 to-rose-300',
-    borderColor: 'border-rose-200',
-    available: false,
-    tags: ['Mean Reversion']
-  },
-  {
-    id: 'dl-volatility',
-    name: 'Deep Learning Volatility',
-    description: 'Neural networks for volatility trading and hedging',
-    gradient: 'from-violet-200 to-violet-300',
-    borderColor: 'border-violet-200',
-    available: false,
-    tags: ['Low Volatility', 'Mean Reversion']
-  },
-  {
-    id: 'etf-swing-strategy',
-    name: 'ETF Swing Strategy',
-    description: 'Swing trading strategy for ETFs based on SMA and percentage thresholds',
-    gradient: 'from-blue-300 via-indigo-400 to-blue-700',
-    borderColor: 'border-blue-400',
-    available: true,
-    category: 'Active',
-    tags: ['Mean Reversion', 'Trend Following']
-  }
+    {
+        id: 'etf-strategy',
+        name: 'ETF Rotation',
+        market: 'India',
+        description: 'Mean reversion and low volatility ETF rotation',
+        gradient: 'from-emerald-200 to-emerald-500',
+        borderColor: 'border-emerald-300',
+        available: true,
+        category: 'Active',
+        tags: ['Mean Reversion', 'Low Volatility'],
+        longDescription: 'A systematic rotation strategy that selects undervalued ETFs exhibiting low volatility characteristics.',
+        executiveSummary: 'This strategy aims to capture returns from mean reversion while maintaining a low-risk profile through volatility-based filtering. It rotates through a universe of Indian ETFs to stay invested in the strongest yet most stable assets.'
+    },
+    {
+        id: 'etf-strategy-payout',
+        name: 'ETF Rotation Payout',
+        market: 'India',
+        description: 'Mean reversion and low volatility ETF rotation',
+        gradient: 'from-orange-200 to-orange-400',
+        borderColor: 'border-orange-300',
+        available: true,
+        category: 'Active',
+        tags: ['Mean Reversion', 'Low Volatility'],
+        longDescription: 'A payout-focused variation of the ETF rotation strategy, optimized for regular income generation.',
+        executiveSummary: 'Maintaining the core principles of mean reversion and low volatility, this version is specifically tuned for portfolios where periodic payouts or dividends are a priority, balancing capital preservation with income.'
+    },    
+    {
+        id: 'RS-ETF-strategy',
+        name: 'RS ETF',
+        market: 'India',
+        description: 'Relative Strength based ETF trading strategy',
+        gradient: 'from-purple-200 to-purple-400',
+        borderColor: 'border-purple-300',
+        available: true,
+        category: 'Active',
+        tags: ['Momentum-based', 'Trend Following'],
+        longDescription: 'A momentum-driven approach that identifies and holds the strongest performers from the ETF universe by measuring their Relative Strength (RS) against a benchmark.',
+        executiveSummary: 'The Relative Strength strategy is rooted in the "persistence of performance" principle. It systematically buys ETFs that are outperforming the broader market and sells those that lose momentum, ensuring your portfolio is always aligned with market leadership.'
+    },
+    {
+        id: 'etf-swing-strategy',
+        name: 'Lazy Turtle Swing ',
+        market: 'India',
+        description: 'ETF swing trading using SMA and thresholds',
+        gradient: 'from-blue-200 to-blue-600',
+        borderColor: 'border-blue-300',
+        available: true,
+        category: 'Active',
+        tags: ['Mean Reversion', 'Trend Following'],
+        longDescription: 'A balanced swing trading strategy utilizing Simple Moving Averages and adaptive percentage-based thresholds.',
+        executiveSummary: 'The Lazy Turtle Swing strategy is designed for investors looking for steady gains with moderate activity. By combining SMA trends with strict percentage entry/exit rules, it captures medium-term price swings effectively.'
+    },
+    {
+        id: 'SuperTrend',
+        name: 'Lazy Turtle Trend Following',
+        market: 'India',
+        description: 'Trend following system using SuperTrend indicator',
+        gradient: 'from-red-200 to-red-500',
+        borderColor: 'border-red-300',
+        available: true,
+        category: 'Inactive',
+        tags: ['Momentum-based', 'Trend Following'],
+        longDescription: 'A classic trend-following system powered by the SuperTrend indicator to capture large directional moves.',
+        executiveSummary: 'This system utilizes the SuperTrend indicator to distinguish between noise and significant market trends. It remains in a position as long as the trend persists, aiming for maximum capture of major bull and bear cycles.'
+    },
+    {
+        id: 'etf-strategy-us',
+        name: 'ETF Rotation',
+        market: 'US',
+        description: 'Mean reversion and low volatility ETF rotation',
+        gradient: 'from-emerald-200 to-emerald-500',
+        borderColor: 'border-emerald-300',
+        available: true,
+        category: 'Active',
+        tags: ['Mean Reversion', 'Low Volatility'],
+        longDescription: 'Global exposure through US-based ETFs, employing mean reversion and low volatility rotation.',
+        executiveSummary: 'Applying our proven rotation logic to the deep and liquid US ETF market. This strategy provides international diversification while focusing on assets with strong recovery potential and low downside risk.'
+    },
+    {
+        id: 'stock-strategy',
+        name: 'Stock Rotation',
+        market: 'India',
+        description: 'Mean reversion and low volatility stock rotation',
+        gradient: 'from-orange-200 to-orange-300',
+        borderColor: 'border-orange-200',
+        available: false,
+        category: 'Active',
+        tags: ['Mean Reversion', 'Low Volatility'],
+        longDescription: 'Stock rotation strategy focusing on high-quality Indian equities with mean-reverting characteristics.',
+        executiveSummary: 'This strategy moves beyond ETFs to individual stocks, using volatility-adjusted mean reversion to pick winners in the Indian equity space. It dynamically rebalances to avoid overvalued stocks and capitalize on stable performers.'
+    },
+    
+    {
+        id: 'RS-strategy',
+        name: 'RS Stock',
+        market: 'India',
+        description: 'Relative Strength based stock trading strategy',
+        gradient: 'from-blue-200 to-blue-300',
+        borderColor: 'border-blue-200',
+        available: false,
+        category: 'Active',
+        tags: ['Momentum-based', 'Trend Following'],
+        longDescription: 'A Relative Strength based stock picking system designed for aggressive growth.',
+        executiveSummary: 'By filtering the Indian stock market for Relative Strength leaders, this strategy stays concentrated in high-momentum stocks. It is designed to outperform during bullish regimes by identifying early trend shifts.'
+    },
+    // {
+    //     id: 'SuperTrend-us',
+    //     name: 'US Super Trend',
+    //     description: 'US trend following using SuperTrend indicator',
+    //     gradient: 'from-red-200 to-red-500',
+    //     borderColor: 'border-red-300',
+    //     available: false,
+    //     market: 'US',
+    //     category: 'Active',
+    //     tags: ['Momentum-based', 'Trend Following']
+    // },
+    
+    {
+        id: 'etf-us-swing-strategy',
+        name: 'Lazy Turtle Swing',
+        description: 'US ETF swing trading using SMA thresholds',
+        gradient: 'from-blue-200 to-blue-600',
+        borderColor: 'border-blue-300',
+        available: true,
+        market: 'US',
+        category: 'Active',
+        tags: ['Mean Reversion', 'Trend Following'],
+        longDescription: 'US-focused swing trading strategy using SMA and volatility thresholds.',
+        executiveSummary: 'Adaptive swing trading for the US market. This strategy identifies optimal entry points during pullbacks in an uptrend, using Simple Moving Averages to ensure trading remains aligned with the broader market direction.'
+    },
+    {
+        id: 'Smoothed_EMA_CrossOver',
+        market: 'India',
+        name: 'Smoothed EMA CrossOver',
+        description: 'EMA CrossOver using SG Smoothing',
+        gradient: 'from-emerald-200 to-emerald-300',
+        borderColor: 'border-emerald-200',
+        available: true,
+        category: 'Inactive',
+        tags: ['Trend Following', 'Momentum-based'],
+        longDescription: 'Advanced EMA Crossover strategy enhanced with SG (Savitzky-Golay) smoothing to reduce lag.',
+        executiveSummary: 'Traditional EMA crossovers often suffer from lag. This version uses SG Smoothing filters to provide cleaner signals, allowing for faster entry and exit while minimizing false breakouts.'
+    },
+    
+    {
+        id: 'ml-breakouts',
+        name: 'ML Breakout Detection',
+        description: 'Machine learning powered breakout pattern recognition',
+        gradient: 'from-amber-200 to-amber-300',
+        borderColor: 'border-amber-200',
+        category: 'Inactive',
+        tags: ['Momentum-based'],
+        longDescription: 'ML-driven pattern recognition for high-probability breakout trades.',
+        executiveSummary: 'Utilizing machine learning models trained on historical price action to identify the signature of a true breakout. This strategy aims to enter trades exactly when momentum is accelerating.'
+    },
+    {
+        id: 'dynamic-risk',
+        name: 'Dynamic Risk Parity',
+        description: 'Real-time risk allocation using volatility forecasting',
+        gradient: 'from-indigo-200 to-indigo-300',
+        borderColor: 'border-indigo-200',
+        category: 'Inactive',
+        tags: ['Low Volatility'],
+        longDescription: 'Mathematical risk allocation using real-time volatility forecasting systems.',
+        executiveSummary: 'Dynamic Risk Parity ensures that no single asset dominates the risk profile of the portfolio. By forecasting volatility, we adjust position sizes daily to maintain a stable risk target.'
+    },
+    {
+        id: 'algo-pairs',
+        name: 'Algorithmic Pairs Trading',
+        description: 'Statistical arbitrage with cointegration analysis',
+        gradient: 'from-rose-200 to-rose-300',
+        borderColor: 'border-rose-200',
+        category: 'Inactive',
+        tags: ['Mean Reversion'],
+        longDescription: 'Statistical arbitrage strategy utilizing cointegration to trade correlated pairs.',
+        executiveSummary: 'By identifying stocks or ETFs that historically move together, this strategy trades the spread between them when it deviates from the mean, betting on their eventual convergence.'
+    },
+    {
+        id: 'dl-volatility',
+        name: 'Deep Learning Volatility',
+        description: 'Neural networks for volatility trading and hedging',
+        gradient: 'from-violet-200 to-violet-300',
+        borderColor: 'border-violet-200',
+        category: 'Inactive',
+        tags: ['Low Volatility', 'Mean Reversion'],
+        longDescription: 'Deep learning models designed for complex volatility forecasting and hedging.',
+        executiveSummary: 'Advanced neural networks analyze non-linear market patterns to predict volatility spikes. This enables proactive hedging and specialized volatility trading in both equity and derivative markets.'
+    },
+    
 ]

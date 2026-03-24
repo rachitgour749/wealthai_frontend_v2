@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
     LineChart,
     Line,
@@ -9,7 +9,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { formatDate } from '../../../utils/dateUtils';
-import { formatCurrency } from '../../../utils/formatUtils';
+import { formatCurrency, getCurrencySymbol } from '../../../utils/formatUtils';
 
 const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategyType }) => {
     const [visibility, setVisibility] = useState({
@@ -22,8 +22,8 @@ const PerformanceChart = ({ performanceData, strategyName = 'Strategy', strategy
         return <div className="h-[400px] flex items-center justify-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-xl">No backtest data available</div>;
     }
 
-    const isUS = strategyType === 'ETF_US' || strategyType === 'International_ETF_Rotation' || strategyType?.includes('US');
-    const currencySymbol = isUS ? '$' : '₹';
+    const currencySymbol = getCurrencySymbol(strategyType, strategyName);
+    const isUS = currencySymbol === '$';
     const benchmarkName = isUS ? 'S&P 500 Buy & Hold' : 'NIFTY50 Buy & Hold';
 
     // Transform data for Recharts

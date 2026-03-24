@@ -15,7 +15,8 @@ const StrategyParameters = ({
     customDateRange,
     onCustomDateChange,
     onCustomDateBlur,
-    isBacktestDisabled
+    isBacktestDisabled,
+    showCreditWarning
 }) => {
     const isLoading = backtestStatus === 'loading';
 
@@ -62,6 +63,13 @@ const StrategyParameters = ({
                             )}
                         </button>
                     </div>
+                    {showCreditWarning && (
+                        <div className="mt-1 text-right">
+                            <p className="text-red-500 text-[10px] md:text-xs font-semibold animate-pulse mr-1">
+                                ⚠️ Your credit count is low, please refill
+                            </p>
+                        </div>
+                    )}
                     <div className="bg-white p-2 md:p-3 rounded-lg border border-[#c6f6d5] mt-2 grid grid-cols-2 gap-2 md:gap-4 min-w-0 sm:min-w-[280px]">
                         <div>
                             <p className="text-gray-400 text-[9px] md:text-[11px] uppercase font-medium">Available Period:</p>

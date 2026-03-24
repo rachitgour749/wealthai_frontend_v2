@@ -4,7 +4,6 @@ import AccountInfo from './Account/AccountInfo';
 import Beneficiaries from './Account/Beneficiaries';
 import AccountInfoForm from './Account/AccountInfoForm';
 import BeneficiaryForm from './Account/BeneficiaryForm';
-import { CustId } from './customerId';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchStockalAccountInfo } from '../../store/slices/stockalSlice';
 import { useEffect } from 'react';
@@ -18,7 +17,9 @@ const Account = () => {
     const [editingBeneficiary, setEditingBeneficiary] = useState(null);
 
     // Using the exported CustId for testing
-    const custId = CustId;
+    const custId = localStorage.getItem('stockal_custId');
+
+    console.log("CustId from Account aInfo", custId)
 
     useEffect(() => {
         if (custId && !isUserValidated) {

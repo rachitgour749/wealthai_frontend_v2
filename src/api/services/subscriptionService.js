@@ -56,8 +56,24 @@ export const activateTrial = async (userEmail, userName) => {
     }
 };
 
+/**
+ * Get user credits information
+ * @param {string} email - User email
+ * @returns {Promise<object>} Credit data {total_credits, used_credits, remaining_credits}
+ */
+export const getCredits = async (email) => {
+    try {
+        const response = await axiosInstance.get(API_ENDPOINTS.FETCH_CREDITS(email));
+        return response.data;
+    } catch (error) {
+        console.error('Get credits error:', error);
+        throw error;
+    }
+};
+
 export default {
     getUserSubscription,
     getProducts,
     activateTrial,
+    getCredits,
 };

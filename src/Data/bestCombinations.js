@@ -15,7 +15,7 @@ export const bestCombinations = [
             accumulationWeeks: 52,
             totalCapitalPerWeek: 50000,
             brokerage: 0.01,
-            riskLevel: 0.08
+            riskFreeRate: 4.5
         }
     },
     {
@@ -157,7 +157,7 @@ export const bestCombinations = [
             bufferCapital: 10,
             brokerage: 0.1,
             riskFreeRate: 6,
-            compoundThreshold: 25
+            compoundingThreshold: 25
         }
     },
     {

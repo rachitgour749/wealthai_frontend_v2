@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     USER_SUBSCRIPTION: (email) => `/api/subscription/user/${email}`,
     ACTIVATE_TRIAL: '/api/subscription/activate-trial',
     PRODUCTS: (email) => `/api/subscription/products/${email}`,
+    FETCH_CREDITS: (email) => `/api/subscription/credits/${email}`,
 
     // Broker
     GET_DETAILS: (email) => `/api/get_details?user_email=${email}`,
@@ -25,8 +26,8 @@ export const API_ENDPOINTS = {
     UPDATE_CREDENTIALS: '/api/broker/update_credentials',
 
     // Strategies
-    ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,
-    ASSETS_OVERVIEW: (strategyType) => `/api/strategy/assets/overview?strategy_type=${strategyType}`,
+    ASSETS: (market, assetType) => `/api/strategy/assets?market=${market}&asset_type=${assetType}`,
+    ASSETS_OVERVIEW: (market, assetType) => `/api/strategy/assets/overview?market=${market}&asset_type=${assetType}`,
     DATE_RANGE: '/api/strategy/date-range',
     RUN_BACKTEST: '/api/run_backtest',
     CACHED_TRANSACTION_LOG: (strategyType) => `/api/strategy/transaction-log?strategy_type=${strategyType}`,
@@ -56,9 +57,30 @@ export const API_ENDPOINTS = {
     STOCKAL_ACCOUNT_INFO: (custId) => `http://localhost:8001/api/v1/stockal/account-info/${custId}`,
     STOCKAL_BENEFICIARIES: (custId) => `http://localhost:8001/api/v1/stockal/beneficiaries/${custId}`,
     STOCKAL_USER_UPDATE: (custId) => `http://localhost:8001/api/v1/stockal/user-update/${custId}`,
-    STOCKAL_CREATE_USER: '/api/v1/stockal/create-user',
-    VALIDATE_STOCKAL_USER: (email) => `http://localhost:8001/api/v1/validate-user/${email}`,
+    STOCKAL_CREATE_USER: 'http://localhost:8001/api/v1/stockal/create-user',
+    VALIDATE_STOCKAL_USER: (email) => `http://localhost:8001/api/v1/validate-user?user_email=${email}`,
     STOCKAL_USERNAME_CHECK: (username) => `http://localhost:8001/api/v1/stockal/username-check/${username}`,
+    STOCKAL_DOCUMENT_UPLOAD: `http://localhost:8001/api/v1/stockal/document-upload`,
+    STOCKAL_EKYC_STATUS: (custId) => `http://localhost:8001/api/v1/stockal/ekyc-status/${custId}`,
+    STOCKAL_EKYC_URL: (custId) => `http://localhost:8001/api/v1/stockal/ekyc-url/${custId}`,
+    STOCKAL_KYC_SUBMIT: (custId) => `http://localhost:8001/api/v1/stockal/kyc-submit/${custId}`,
+    STOCKAL_ACCOUNT_SUMMARY: (custId) => `http://localhost:8001/api/v1/stockal/account-summary/${custId}`,
+    STOCKAL_PORTFOLIO: (custId) => `http://localhost:8001/api/v1/stockal/portfolio/${custId}`,
+    STOCKAL_POSITIONS: (custId) => `http://localhost:8001/api/v1/stockal/positions/${custId}`,
+    STOCKAL_HOLDINGS: (custId) => `http://localhost:8001/api/v1/stockal/holdings/${custId}`,
+    STOCKAL_ORDERS: `http://localhost:8001/api/v1/stockal/orders`,
+    STOCKAL_ORDER_OPERATIONS: (orderId) => `http://localhost:8001/api/v1/stockal/orders/${orderId}`,
+    STOCKAL_ORDER_CANCEL: (orderId) => `http://localhost:8001/api/v1/stockal/orders/cancel/${orderId}`,
+    STOCKAL_MARKET_PRICE: `http://localhost:8001/api/v1/stockal/market/current-price`,
+    STOCKAL_MARKET_HISTORY: `http://localhost:8001/api/v1/stockal/market/historical-prices`,
+
+    // Webhook
+    GET_WEBHOOKS: (userId) => `/api/webhook/user/${userId}`,
+    TOGGLE_WEBHOOK_STATUS: (runId, status) => `/api/webhook/status/${runId}/${status}`,
+    DELETE_WEBHOOK: (runId) => `/api/webhook/delete/${runId}`,
+    CREATE_WEBHOOK: '/api/webhook/create',
+    RA_CODES: '/api/webhook/ra',
+    RA_STRATEGIES: (raCode) => `/api/webhook/ra/${raCode}/strategies`,
 };
 
 export default API_BASE_URL;

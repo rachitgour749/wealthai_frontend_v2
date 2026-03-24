@@ -4,8 +4,7 @@ import Navbar from './Components/Navbar';
 import Home from './Pages/Home';
 import LoginPopup from './Components/LoginPopup';
 import Trial from './Components/Trial';
-import { selectShouldShowTrial } from './store/slices/subscriptionSlice';
-import { setShouldShowTrial } from './store/slices/subscriptionSlice';
+import { selectShouldShowTrial, setShouldShowTrial, selectShowPaymentPopup, selectPaymentPlan, setPaymentPopup, fetchProducts, fetchCredits } from './store/slices/subscriptionSlice';
 import { selectCurrentPage, setCurrentPage } from './store/slices/navigationSlice';
 import ChatAi1 from './Pages/ChatAi1';
 import InvestAi1 from './Pages/InvestAi1';
@@ -14,7 +13,6 @@ import PortfolioAnalytics from './Pages/PortfolioAnalytics';
 import MyProfile from './Components/MyProfile';
 import AppPopup from './Components/Common/AppPopup';
 import PaymentPopup from './Components/PaymentPopup';
-import { selectShowPaymentPopup, selectPaymentPlan, setPaymentPopup } from './store/slices/subscriptionSlice';
 import { updateBrokerConnectionStatus, fetchAccountDetails } from './store/slices/brokerSlice';
 import { selectIsAuthenticated, selectUserEmail } from './store/slices/userSlice';
 
@@ -36,7 +34,11 @@ const App = () => {
       // 1. Fetch account details from API (New Source of Truth)
       dispatch(fetchAccountDetails(userEmail));
 
-      // 2. Fallback: Check if broker session exists in localStorage/cookies (Legacy Sync)
+      // 2. Fetch Subscription & Credits
+      dispatch(fetchProducts(userEmail));
+      dispatch(fetchCredits(userEmail));
+
+      // 3. Fallback: Check if broker session exists in localStorage/cookies (Legacy Sync)
       dispatch(updateBrokerConnectionStatus());
     }
   }, [isAuthenticated, userEmail, dispatch]);

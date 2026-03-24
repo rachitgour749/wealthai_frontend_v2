@@ -55,7 +55,9 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
 
     if (!results) return null;
 
-    const { metrics, performance_data, strategy_type } = results;
+    const { metrics, performance_data, strategy_type: resultStrategyType } = results;
+    // Fallback: if API response doesn't include strategy_type, use the payload's value
+    const strategy_type = resultStrategyType || backtestPayload?.strategy_type;
 
     // Inject calculated total trades into metrics if it's missing or use it for the card
     const totalTrades = calculatedTotalTrades !== null ? calculatedTotalTrades : (metrics['Total Trades'] || metrics['total_trades'] || (metrics.strategy && (metrics.strategy['Total Trades'] || metrics.strategy['total_trades'])));
@@ -87,12 +89,12 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
 
         try {
             // Reconstruct the payload as per requirements
-            const { strategy_type, tickers, start_date, end_date, ...otherParams } = backtestPayload;
+            const { strategy_type, tickers, symbols, symbol, start_date, end_date, ...otherParams } = backtestPayload;
 
             const savePayload = {
                 user_id: user.email, // Using email as user_id as per authService mapping
                 strategy_type: strategy_type,
-                tickers: tickers,
+                tickers: tickers || symbols || symbol,
                 start_date: start_date,
                 end_date: end_date,
                 use_custom_date: useCustomDate || false,
@@ -225,7 +227,7 @@ const BacktestResults = ({ results, onBackToSetup, onNewBacktest, strategyTitle,
             </div>
 
             {/* Metric Summary Cards */}
-            <ResultMetricCards metrics={enrichedMetrics} strategyType={strategy_type} />
+            <ResultMetricCards metrics={enrichedMetrics} strategyType={strategy_type} strategyName={strategyTitle} />
 
             {/* Detailed Tabs */}
             <ResultTabs
