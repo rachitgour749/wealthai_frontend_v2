@@ -21,14 +21,15 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
 
     const effectiveIsOpen = isInline || isOpen;
 
-    // Initial check (if connected, jump to step 3)
+    // Initial check
     useEffect(() => {
         if (effectiveIsOpen) {
-            // If inline (Account Config tab), always start at Broker Selection (0)
+            // Always start at Broker Selection (0) for the dashboard view
             if (isInline) {
                 setCurrentStep(0);
                 setSelected(null);
             } else if (hasSavedCredentials || isConnected) {
+                // For the popup modal, jump straight to status if configured
                 setCurrentStep(2);
             } else {
                 setCurrentStep(0);
@@ -39,7 +40,17 @@ const AddBroker = ({ isOpen, onClose, isInline = false }) => {
 
     const handleBrokerSelect = (brokerKey) => {
         setSelected(brokerKey);
-        setCurrentStep(1);
+        // If this broker is already the active one and has credentials, go to status page (Step 2)
+        const activeBroker = localStorage.getItem('wealthai_active_broker') || ''; // Better to use state but since we might refresh
+        const isAlreadyConfigured = hasSavedCredentials && (selected === brokerKey);
+
+        // Use a more reliable check: if hasSavedCredentials is true, we should check which one.
+        // Actually, the redux state 'activeBroker' is the most reliable.
+        if (hasSavedCredentials && brokerKey.toLowerCase() === (localStorage.getItem('wealthai_active_broker') || '').toLowerCase()) {
+            setCurrentStep(2);
+        } else {
+            setCurrentStep(1);
+        }
     };
 
     const handleBack = () => {

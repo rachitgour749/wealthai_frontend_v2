@@ -69,7 +69,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
                     </p>
 
                     {/* Google Sign-In Button with 3D Effects */}
-                    <div className='mt-6 w-full max-w-sm'>
+                    <div className='mt-6'>
                         <div className='relative'>
                             {/* Button Container with 3D Effects */}
                             <div className='relative bg-white rounded-lg overflow-hidden border border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.12),0_4px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)] transform hover:-translate-y-1 transition-all duration-300'>

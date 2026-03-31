@@ -11,6 +11,7 @@ import ETF from '../Strategies/ETF'
 import RS_ETF from '../Strategies/RS_ETF'
 import ETF_Payout from '../Strategies/ETF_Payout'
 import ETF_US from '../Strategies/ETF_US'
+import ETF_Swing from '../Strategies/ETF_Swing'
 import MyPortfolio from '../Components/MyPortfolio/MyPortfolio'
 import CustomStrategies from '../Components/CustomStrategies'
 import Stock from '../Strategies/Stock'
@@ -19,7 +20,7 @@ import { selectHasSavedCredentials, selectIsBrokerConnected } from '../store/sli
 import { useEffect } from 'react'
 import Stockal from '../Components/Stockal/Stockal'
 import { validateStockalUser } from '../store/slices/stockalSlice'
-import { message } from 'antd'
+import { showNotification } from '../store/slices/uiSlice'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -50,17 +51,19 @@ const MarketsAi1 = () => {
 
   const handleTabChange = async (tab) => {
     if (tab === 'Stockal' && userEmail) {
-      const hide = message.loading({ content: 'Validating user...', key: 'stockal_validation' });
+      dispatch(showNotification({ message: 'Validating user...', type: 'loading' }));
       try {
         const result = await dispatch(validateStockalUser(userEmail)).unwrap();
-        message.success({ content: 'User validated', key: 'stockal_validation' });
+        dispatch(showNotification({ message: 'User validated', type: 'success' }));
         dispatch(setCurrentTab(tab));
       } catch (error) {
         if (error === 'USER_NOT_FOUND') {
-          message.info({ content: 'Redirecting to onboarding...', key: 'stockal_validation' });
+          dispatch(showNotification({ message: 'Redirecting to onboarding...', type: 'info' }));
           dispatch(setCurrentTab(tab));
         } else {
-          message.error({ content: `Validation failed: ${error}`, key: 'stockal_validation' });
+          dispatch(showNotification({ message: `Validation failed: ${error}`, type: 'error' }));
+        }
+      }
         }
       }
     } else {
@@ -84,6 +87,8 @@ const MarketsAi1 = () => {
         return <ETF_Payout onBack={handleBackToStrategies} />
       case 'etf-strategy-us':
         return <ETF_US onBack={handleBackToStrategies} />
+      case 'etf-swing-strategy':
+        return <ETF_Swing onBack={handleBackToStrategies} />
       case 'custom-strategy':
         return <CustomStrategies onBack={handleBackToStrategies} />
       default:

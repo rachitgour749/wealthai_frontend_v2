@@ -10,8 +10,10 @@ const BrokerSelection = ({ onSelect }) => {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 mb-4 md:mb-6 max-w-7xl mx-auto w-full">
             {MenuItems.map((item) => {
-                const isActive = isConnected && activeBroker && activeBroker.toLowerCase() === item.key.toLowerCase();
-                const isDisabled = item.isComingSoon || (isConnected && !isActive);
+                const isConfigured = activeBroker && activeBroker.toLowerCase() === item.key.toLowerCase();
+                // For the UI, "Active" means it's the configured broker for this user.
+                const isActive = isConfigured;
+                const isDisabled = item.isComingSoon || (activeBroker && !isConfigured);
 
                 return (
                     <div
@@ -26,8 +28,8 @@ const BrokerSelection = ({ onSelect }) => {
                             }
                     `}
                     >
-                        {/* LIVE Badge (Show ONLY if this is the active broker) */}
-                        {isActive && (
+                        {/* Status Badge */}
+                        {isConfigured && (
                             <div className={`bg-gradient-to-br px-1.5 md:px-2 py-0.5 md:py-1 ${item.gradient}`}>
                                 <span className="bg-white text-green-700 text-[7px] md:text-[10px] font-bold px-2 md:px-1.5 py-[2px] rounded shadow-sm">
                                     Active
@@ -57,7 +59,7 @@ const BrokerSelection = ({ onSelect }) => {
                             </h3>
                         </div>
                     </div>
-                )
+                );
             })}
         </div>
     );

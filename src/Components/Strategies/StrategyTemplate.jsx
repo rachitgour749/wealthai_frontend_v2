@@ -86,9 +86,14 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                     setLoading(true);
                     console.log(`[StrategyTemplate] Fetching data for: ${strategy.strategy_type}`);
 
+                    // Use ETF_Rotation assets/overview for ETF_Swing_Strategy
+                    const assetStrategyType = strategy.strategy_type === 'ETF_Swing_Strategy'
+                        ? 'ETF_Rotation'
+                        : strategy.strategy_type;
+
                     let [assets, overview] = await Promise.all([
-                        strategyService.fetchAssets(strategy.strategy_type),
-                        strategyService.fetchAssetsOverview(strategy.strategy_type)
+                        strategyService.fetchAssets(assetStrategyType),
+                        strategyService.fetchAssetsOverview(assetStrategyType)
                     ]);
 
                     const findArray = (data, preferredKeys = []) => {
@@ -333,6 +338,13 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             if (params.buffer_capital !== undefined) newParamValues.bufferCapital = params.buffer_capital;
             if (params.compounding_threshold !== undefined) newParamValues.compoundingThreshold = params.compounding_threshold;
 
+            // ETF Swing Strategy parameters
+            if (params.initial_capital !== undefined) newParamValues.initial_capital = params.initial_capital;
+            if (params.sma_lookback !== undefined) newParamValues.sma_lookback = params.sma_lookback;
+            if (params.stop_loss_pct !== undefined) newParamValues.stop_loss_pct = params.stop_loss_pct;
+            if (params.profit_threshold_pct !== undefined) newParamValues.profit_threshold_pct = params.profit_threshold_pct;
+            if (params.number_of_slots !== undefined) newParamValues.number_of_slots = params.number_of_slots;
+
             setParamValues(newParamValues);
         }
 
@@ -432,6 +444,26 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
             }
         }
 
+        if (config.strategy_type === 'ETF_Swing_Strategy') {
+            const smaLookback = Number(paramValues.sma_lookback);
+            if (smaLookback > 250) {
+                dispatch(showNotification({
+                    message: `SMA Lookback should not be greater than 250.`,
+                    type: 'warning'
+                }));
+                return;
+            }
+
+            const slots = Number(paramValues.number_of_slots);
+            if (slots > selectedETFs.length) {
+                dispatch(showNotification({
+                    message: `Number of Slots (${slots}) cannot be greater than the number of selected ETFs (${selectedETFs.length}).`,
+                    type: 'warning'
+                }));
+                return;
+            }
+        }
+
         // Cleanup any existing controller
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -476,7 +508,15 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                 payload.total_capital = Number(paramValues.totalCapital);
                 payload.stop_loss = Number(paramValues.stopLoss);
                 payload.buffer_capital = Number(paramValues.bufferCapital);
+                payload.stop_loss = Number(paramValues.stopLoss);
+                payload.buffer_capital = Number(paramValues.bufferCapital);
                 payload.compounding_threshold = Number(paramValues.compoundingThreshold);
+            } else if (config.strategy_type === 'ETF_Swing_Strategy') {
+                payload.initial_capital = Number(paramValues.initial_capital);
+                payload.sma_lookback = Number(paramValues.sma_lookback);
+                payload.stop_loss_pct = Number(paramValues.stop_loss_pct);
+                payload.profit_threshold_pct = Number(paramValues.profit_threshold_pct);
+                payload.number_of_slots = Number(paramValues.number_of_slots);
             }
 
             console.log(`[StrategyTemplate] Triggering backtest for ${config.strategy_type}:`, payload);

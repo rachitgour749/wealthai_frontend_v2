@@ -64,7 +64,10 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                 // Check for nested data structure (e.g. { status: 'success', data: { ... } })
                 const details = accountDetails?.data || accountDetails;
 
-                if (details && details.client_id) {
+                // Identification of Indian brokers
+                const isIndianBroker = ['angelone', 'zerodha', 'kotak', 'dhan', 'aliceblue'].includes(details?.broker_name?.toLowerCase());
+
+                if (details && details.client_id && !(isInternational && isIndianBroker)) {
                     console.log('Setting clients from details:', details);
                     const weeks = parseFloat(accumulationWeeks) || 1;
                     const baseCapital = parseFloat(referenceCapital) || 0;
@@ -79,7 +82,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                         finalCapital: `${currencySymbol}${formatNumber(capitalPerWeek * 1)}`
                     }]);
                 } else {
-                    console.warn('accountDetails missing or incomplete:', accountDetails);
+                    console.warn('accountDetails missing, incomplete, or incompatible (Indian broker for US strategy):', accountDetails);
+                    setClients([]);
                 }
             } else if (userEmail && !isInternational) {
                 // Admin/Broker Logic: Fetch from API
@@ -409,14 +413,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                         {/* Left Section */}
                         <div className="space-y-4">
                             {/* Webhook or Coming Soon */}
-                            {isInternational ? (
-                                <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
-                                    <h3 className="text-blue-900 text-sm font-bold uppercase tracking-wider mb-2">Auto-Deployment Coming Soon</h3>
-                                    <p className="text-blue-800/80 text-[12px] leading-relaxed">
-                                        We are integrating with <strong>Stockal</strong> broker for seamless, one-click trading in the US market. Stay tuned for real-time order execution!
-                                    </p>
-                                </div>
-                            ) : !isClient ? (
+                            {!isInternational && !isClient ? (
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-[2px]">
                                         Webhook
@@ -541,27 +538,36 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
 
                             {/* Show Configure Broker button if client has no broker account */}
                             {isClient && clients.length === 0 ? (
-                                <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2 bg-gray-50 p-8">
-                                    <div className="flex flex-col items-center justify-center gap-4">
-                                        <div className="text-center">
-                                            <p className="text-gray-600 text-sm mb-2">No broker account configured</p>
-                                            <p className="text-gray-500 text-xs">Please configure your broker account to deploy strategies</p>
+                                <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2 bg-gray-50 p-2">
+                                    {isInternational ? (
+                                        <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-[10px] text-center">
+                                            <h3 className="text-blue-900 text-sm font-bold uppercase tracking-wider mb-2">Auto-Deployment Coming Soon</h3>
+                                            <p className="text-blue-800/80 text-[12px] leading-relaxed">
+                                                We are integrating with <strong>Stockal</strong> broker for seamless, one-click trading in the US market. Stay tuned for real-time order execution!
+                                            </p>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                onClose();
-                                                dispatch(setCurrentPage('MarketsAi1'));
-                                                dispatch(setCurrentTab('AddBroker'));
-                                            }}
-                                            className="px-6 py-2 bg-wealth-800 hover:bg-wealth-900 text-white rounded-[5px] transition-colors font-medium text-sm flex items-center gap-2"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            Configure Broker Account
-                                        </button>
-                                    </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="text-center">
+                                                <p className="text-gray-600 text-sm mb-2">No broker account configured</p>
+                                                <p className="text-gray-500 text-xs">Please configure your broker account to deploy strategies</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    onClose();
+                                                    dispatch(setCurrentPage('MarketsAi1'));
+                                                    dispatch(setCurrentTab('AddBroker'));
+                                                }}
+                                                className="px-6 py-2 bg-wealth-800 hover:bg-wealth-900 text-white rounded-[5px] transition-colors font-medium text-sm flex items-center gap-2"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                Configure Broker Account
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2">
@@ -585,7 +591,11 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
 
                                                 {/* Capital Header */}
                                                 <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">
-                                                    {isClient ? 'CAPITAL PER WEEK' : 'FINAL CAPITAL'}
+                                                    {isClient
+                                                        ? (['ETF_Rotation', 'International_ETF_Rotation', 'Stock_Rotation', 'ETF_Payout'].includes(strategyType)
+                                                            ? 'CAPITAL PER WEEK'
+                                                            : 'TOTAL CAPITAL')
+                                                        : 'FINAL CAPITAL'}
                                                 </th>
 
                                                 {!isClient && <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-700 uppercase">DELETE</th>}
@@ -685,8 +695,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                     </button>
                     <button
                         onClick={handleDeploy}
-                        disabled={loading || clients.length === 0}
-                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0
+                        disabled={loading || clients.length === 0 || isInternational}
+                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0 || isInternational
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-wealth-800 hover:bg-wealth-900'
                             } text-white`}

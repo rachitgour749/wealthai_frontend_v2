@@ -60,6 +60,20 @@ const stockalService = {
         }
     },
 
+     /**
+     * Create a new Stockal user (onboarding)
+     * @param {Object} payload - The user creation payload
+     */
+    createUser: async (payload) => {
+        try {
+            const response = await axiosInstance.post(API_ENDPOINTS.STOCKAL_CREATE_USER, payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating Stockal user:', error);
+            throw error;
+        }
+    },
+
     /**
      * Validate Stockal user
      * @param {string} email - The user's email
@@ -70,6 +84,20 @@ const stockalService = {
             return response;
         } catch (error) {
             console.error('Error validating Stockal user:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Check Stockal username availability
+     * @param {string} username - The username to check
+     */
+    checkUsername: async (username) => {
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.STOCKAL_USERNAME_CHECK(username));
+            return response;
+        } catch (error) {
+            console.error('Error checking username availability:', error);
             throw error;
         }
     }

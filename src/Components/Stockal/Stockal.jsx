@@ -5,6 +5,7 @@ import { LayoutDashboard, Package, Heart, TrendingUp, Bell, CircleDollarSign, Ar
 import Home from './Home';
 import Orders from './Orders';
 import Account from './Account';
+import UserOnBoarding from './UserOnBoarding/UserOnBoarding';
 import { setCurrentTab } from '../../store/slices/navigationSlice';
 
 const Stockal = () => {
@@ -70,8 +71,7 @@ const Stockal = () => {
 
     return (
         <div className='h-full w-full flex'>
-            {isUserValidated && (
-                <div className='border border-wealth-800 relative bg-wealth-900 flex flex-col justify-start items-center gap-[11px] text-white w-16 h-full rounded-l-[10px] p-1 pt-4 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.1)]'>
+            {true && (                <div className='border border-wealth-800 relative bg-wealth-900 flex flex-col justify-start items-center gap-[11px] text-white w-16 h-full rounded-l-[10px] p-1 pt-4 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.1)]'>
                     {tabs.map((tab) => (
                         <div
                             key={tab.value}
@@ -174,9 +174,9 @@ const Stockal = () => {
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="h-full w-full"
+                            className="h-full w-full p-4 overflow-y-auto custom-scrollbar"
                         >
-                            <Account onboardingMode={true} />
+                            <UserOnBoarding onCancel={() => setShowOnboarding(false)} />
                         </motion.div>
                     )
                 ) : (

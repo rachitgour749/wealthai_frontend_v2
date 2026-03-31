@@ -6,11 +6,11 @@ import { selectIsAuthenticated, selectUser } from '../store/slices/userSlice';
 import { selectCurrentPage } from '../store/slices/navigationSlice';
 import { handleLogout } from '../handlers/authHandler';
 import { Assets } from '../assets/Assets';
-import { selectIsBrokerConnected, updateBrokerConnectionStatus, selectIsExpired, selectActiveBroker, setSavedCredentials } from '../store/slices/brokerSlice';
+import { selectIsBrokerConnected, updateBrokerConnectionStatus, selectIsExpired, selectActiveBroker, setSavedCredentials, setBrokerConnection } from '../store/slices/brokerSlice';
 import { selectCurrentTab, setCurrentTab } from '../store/slices/navigationSlice';
+import { showNotification } from '../store/slices/uiSlice';
 import { reconnectBroker, storeBrokerSession, getBrokerStatus } from '../api/services/brokerService';
 import { selectUserEmail } from '../store/slices/userSlice';
-import { message } from 'antd';
 import LoginPopup from './LoginPopup';
 import UserAvatar from './Navbar/UserAvatar';
 import UserMenu from './Navbar/UserMenu';
@@ -54,7 +54,7 @@ const Navbar = ({ setCurrentPage }) => {
     const handleReconnect = async () => {
         // Don't open Add Broker popup - just attempt reconnection
         if (isBrokerConnected) {
-            message.info(`${activeBroker || 'Broker'} is already connected`);
+            dispatch(showNotification({ message: `${activeBroker || 'Broker'} is already connected`, type: 'info' }));
             return;
         }
 
@@ -64,29 +64,38 @@ const Navbar = ({ setCurrentPage }) => {
 
         if (hasLocalCreds && brokerName) {
             // Attempt to reconnect using saved credentials
-            message.loading({ content: 'Reconnecting...', key: 'reconnect' });
+            dispatch(showNotification({ message: 'Reconnecting...', type: 'loading' }));
             try {
                 const response = await reconnectBroker(userEmail, brokerName);
                 if (response && response.status === "success") {
-                    message.success({ content: `Reconnected to ${response.broker_name} successfully`, key: 'reconnect' });
-                    storeBrokerSession({
+                    // Backend returns flat object with root fields
+                    dispatch(showNotification({ message: 'Reconnected successfully', type: 'success' }));
+
+                    const sessionData = {
                         token: response.access_token,
                         expire: response.expire,
                         broker_name: response.broker_name,
                         client_id: response.client_id,
-                        user_email: response.user_email
-                    });
+                        user_email: userEmail
+                    };
+
+                    storeBrokerSession(sessionData);
+
+                    // Directly update Redux state for immediate UI feedback
+                    dispatch(setBrokerConnection(sessionData));
+
+                    // Also run global sync just in case
                     dispatch(updateBrokerConnectionStatus());
                 } else {
-                    message.error({ content: "Re-connection failed. Please check your credentials.", key: 'reconnect' });
+                    dispatch(showNotification({ message: "Re-connection failed. Please check your credentials.", type: 'error' }));
                 }
             } catch (error) {
                 console.error('Re-connection error:', error);
-                message.error({ content: "Re-connection error. Please try again later.", key: 'reconnect' });
+                dispatch(showNotification({ message: "Re-connection error. Please try again later.", type: 'error' }));
             }
         } else {
             // No saved credentials for this user - just show a message, don't open Add Broker
-            message.warning('No saved broker credentials found. Please add a broker from MarketsAI.');
+            dispatch(showNotification({ message: 'No saved broker credentials found. Please add a broker from MarketsAI.', type: 'warning' }));
         }
     };
 

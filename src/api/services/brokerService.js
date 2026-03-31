@@ -43,12 +43,11 @@ export const getBrokerStatus = async (userEmail) => {
  */
 export const reconnectBroker = async (userEmail, brokerName) => {
     try {
-        const response = await axiosInstance.post(API_ENDPOINTS.BROKER_RECONNECT, null, {
-            params: { user_email: userEmail, broker_name: brokerName }
-        });
+        // Use the new relogin endpoint as requested
+        const response = await axiosInstance.get(API_ENDPOINTS.BROKER_RELOGIN(userEmail));
         return response.data;
     } catch (error) {
-        console.error('Error reconnecting broker:', error);
+        console.error('Error relogging broker:', error);
         throw error;
     }
 };

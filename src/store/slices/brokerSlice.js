@@ -7,21 +7,33 @@ export const fetchAccountDetails = createAsyncThunk(
     'broker/fetchAccountDetails',
     async (userEmail, { rejectWithValue }) => {
         try {
-            const data = await getAccountDetails(userEmail);
+            const response = await getAccountDetails(userEmail);
+            const data = response.data; // The actual broker data is inside the data property
+
             // Store results in localStorage for the slice to pick up on page load
             if (data && data.broker_name) {
+                // Determine the correct token and expiry from API response or existing storage
+                const token = data.access_token || Cookies.get('wealthai_broker_token') || localStorage.getItem('wealthai_broker_token');
+                const expiry = data.token_expire || Cookies.get('wealthai_broker_expiry') || localStorage.getItem('wealthai_broker_expiry');
+
                 const session = {
                     broker_name: data.broker_name,
                     client_id: data.client_id,
                     user_email: userEmail,
-                    token: Cookies.get('wealthai_broker_token') || localStorage.getItem('wealthai_broker_token'),
-                    expire: Cookies.get('wealthai_broker_expiry') || localStorage.getItem('wealthai_broker_expiry'),
-                    credentials: data.credentials
+                    token: token,
+                    expire: expiry,
+                    credentials: data.credentials || data.broker_credentials
                 };
+
+                // Update storage to ensure everything is in sync
                 localStorage.setItem('broker_session', JSON.stringify(session));
                 localStorage.setItem('wealthai_has_broker', 'true');
+
+                if (token) Cookies.set('wealthai_broker_token', token, { expires: 1 });
+                if (expiry) Cookies.set('wealthai_broker_expiry', expiry, { expires: 1 });
+                Cookies.set('broker_session', JSON.stringify(session), { expires: 1 });
             }
-            return data;
+            return response;
         } catch (error) {
             // Handle 404 as "No broker connected"
             if (error.response && error.response.status === 404) {
@@ -85,8 +97,11 @@ const checkConnection = () => {
                 if (session.token) {
                     if (session.expire) {
                         const now = new Date();
-                        const expireDate = new Date(session.expire);
-                        if (expireDate <= now) {
+                        // Robust parsing for "YYYY-MM-DD HH:mm:ss"
+                        const expireDateString = session.expire.includes('T') ? session.expire : session.expire.replace(' ', 'T');
+                        const expireDate = new Date(expireDateString);
+
+                        if (expireDate.toString() !== 'Invalid Date' && expireDate <= now) {
                             return { connected: false, broker: session.broker_name, expired: true };
                         }
                     }
@@ -136,10 +151,34 @@ const brokerSlice = createSlice({
     reducers: {
         updateBrokerConnectionStatus: (state) => {
             const status = checkConnection();
+            console.log('🔄 Syncing broker status from storage:', status);
             state.isBrokerConnected = status.connected;
             state.activeBroker = status.broker;
             state.isExpired = status.expired;
             if (status.broker) {
+                state.hasSavedCredentials = true;
+                localStorage.setItem('wealthai_has_broker', 'true');
+            }
+        },
+        setBrokerConnection: (state, action) => {
+            const { token, expire, broker_name, client_id } = action.payload;
+            console.log('✅ Directly setting broker connection state:', { broker_name, expire });
+
+            state.isBrokerConnected = !!token;
+            state.activeBroker = broker_name;
+            state.isExpired = false; // Usually true if we just got a new token
+
+            if (expire) {
+                const now = new Date();
+                const expireDateString = expire.includes('T') ? expire : expire.replace(' ', 'T');
+                const expireDate = new Date(expireDateString);
+                if (expireDate.toString() !== 'Invalid Date' && expireDate <= now) {
+                    state.isBrokerConnected = false;
+                    state.isExpired = true;
+                }
+            }
+
+            if (broker_name) {
                 state.hasSavedCredentials = true;
                 localStorage.setItem('wealthai_has_broker', 'true');
             }
@@ -195,12 +234,33 @@ const brokerSlice = createSlice({
             .addCase(fetchAccountDetails.fulfilled, (state, action) => {
                 state.loading = false;
                 state.accountDetails = action.payload;
+                // The actual profile data is in action.payload.data
+                const brokerData = action.payload.data;
+
                 // Update basic status flags from API data
-                if (action.payload && action.payload.broker_name) {
-                    state.activeBroker = action.payload.broker_name;
-                    state.isBrokerConnected = true; // If we found details, assume it's the connected broker
+                if (brokerData && brokerData.broker_name) {
+                    state.activeBroker = brokerData.broker_name;
                     state.hasSavedCredentials = true;
                     localStorage.setItem('wealthai_has_broker', 'true');
+
+                    // Re-evaluate connection status based on potentially new expiration date
+                    const expireStr = brokerData.token_expire;
+                    if (expireStr) {
+                        const now = new Date();
+                        const expireDateString = expireStr.includes('T') ? expireStr : expireStr.replace(' ', 'T');
+                        const expireDate = new Date(expireDateString);
+
+                        if (expireDate.toString() !== 'Invalid Date' && expireDate <= now) {
+                            state.isBrokerConnected = false;
+                            state.isExpired = true;
+                        } else {
+                            state.isBrokerConnected = true;
+                            state.isExpired = false;
+                        }
+                    } else {
+                        state.isBrokerConnected = true; // Fallback if no expiry provided
+                        state.isExpired = false;
+                    }
                 }
             })
             .addCase(fetchAccountDetails.rejected, (state, action) => {
@@ -243,7 +303,7 @@ const brokerSlice = createSlice({
     }
 });
 
-export const { updateBrokerConnectionStatus, setSavedCredentials, clearBrokerConnection } = brokerSlice.actions;
+export const { updateBrokerConnectionStatus, setSavedCredentials, clearBrokerConnection, setBrokerConnection } = brokerSlice.actions;
 
 export const selectIsBrokerConnected = (state) => state.broker.isBrokerConnected;
 export const selectActiveBroker = (state) => state.broker.activeBroker;

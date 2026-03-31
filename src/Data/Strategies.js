@@ -114,5 +114,15 @@ export const strategies = [
     borderColor: 'border-violet-200',
     available: false,
     tags: ['Low Volatility', 'Mean Reversion']
+  },
+  {
+    id: 'etf-swing-strategy',
+    name: 'ETF Swing Strategy',
+    description: 'Swing trading strategy for ETFs based on SMA and percentage thresholds',
+    gradient: 'from-blue-300 via-indigo-400 to-blue-700',
+    borderColor: 'border-blue-400',
+    available: true,
+    category: 'Active',
+    tags: ['Mean Reversion', 'Trend Following']
   }
 ]
