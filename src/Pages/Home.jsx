@@ -29,7 +29,8 @@ const Home = ({ onLoginClick, setCurrentPage }) => {
         'insurance.moneycompound@gmail.com',
         'rachit.gour749@gmail.com',
         'anjanr@gmail.com',
-        'iamshourya007@gmail.com'
+        'iamshourya007@gmail.com',
+        'wealthwisersfinancialservices@gmail.com'
     ];
 
     // Check if user has ChatAi1 access

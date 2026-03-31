@@ -110,7 +110,11 @@ export function ChatInterface({
                     ) : (
                         <div className="flex flex-col gap-6 pb-4">
                             <AnimatePresence>
-                                {messages.map((msg, idx) => (
+                                {messages.map((msg, idx) => {
+                                    // Only show follow-ups on the last assistant message
+                                    const isLastAssistant = msg.role === 'assistant' && 
+                                        idx === messages.map((m, i) => m.role === 'assistant' ? i : -1).filter(i => i >= 0).pop();
+                                    return (
                                     <motion.div
                                         key={idx}
                                         initial={{ opacity: 0, y: 10 }}
@@ -121,9 +125,12 @@ export function ChatInterface({
                                             {...msg}
                                             onShowCitations={onShowCitations}
                                             shouldAnimate={msg.id === animatingMsgId}
+                                            onFollowUpClick={onSend}
+                                            isLastAssistant={isLastAssistant}
                                         />
                                     </motion.div>
-                                ))}
+                                    );
+                                })}
                             </AnimatePresence>
 
                             {isLoading && (

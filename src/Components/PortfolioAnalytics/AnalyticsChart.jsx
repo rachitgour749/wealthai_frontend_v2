@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDate } from '../../utils/formatUtils';
 import {
     LineChart,
     Line,
@@ -37,14 +38,6 @@ const AnalyticsChart = ({ data, loading, strategyName }) => {
         return `₹${value}`;
     };
 
-    const formatDate = (dateStr) => {
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
     // calculate min and max for Y axis scaling
     const allValues = data.flatMap(d => [
@@ -61,7 +54,7 @@ const AnalyticsChart = ({ data, loading, strategyName }) => {
             return (
                 <div className="bg-white p-4 rounded-xl shadow-xl border-2 border-wealth-800 min-w-[200px]">
                     <p className="text-sm font-extrabold text-gray-900 mb-3 text-center border-b border-gray-100 pb-2">
-                        {new Date(label).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                        {formatDate(label)}
                     </p>
                     <div className="space-y-3">
                         {payload.map((entry, index) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency } from '../../../utils/formatUtils';
+import { formatCurrency, formatDate } from '../../../utils/formatUtils';
 import strategyService from '../../../api/services/strategyService';
 
 const TradesTransactions = ({ strategyType, transactions = [] }) => {
@@ -24,7 +24,7 @@ const TradesTransactions = ({ strategyType, transactions = [] }) => {
                     const dateStr = row.execution_date || row.signal_date || row.date || '';
                     const dateObj = new Date(dateStr);
                     const dayName = isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-                    const formattedDate = dateStr.split(/[ T]/)[0];
+                    const formattedDate = formatDate(dateStr);
 
                     if (action === 'churn') {
                         const aggregatedSells = {};

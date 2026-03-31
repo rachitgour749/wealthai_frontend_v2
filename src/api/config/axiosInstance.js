@@ -7,7 +7,7 @@ import { logoutUser } from '../../store/slices/userSlice';
 // Create axios instance with base configuration
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 300000, // 30 seconds
+    timeout: 120000, // 120 seconds - ChatAI queries can take 30-60s with Google Search
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -46,10 +46,16 @@ axiosInstance.interceptors.response.use(
             switch (status) {
                 case 401:
                     // Unauthorized - Token expired or invalid
-                    removeToken();
-                    store.dispatch(logoutUser());
-                    // Optionally redirect to login
-                    window.location.href = '/';
+                    // Don't redirect for admin/MFD routes (they have their own auth)
+                    {
+                        const url = error.config?.url || '';
+                        const isAdminOrMfd = url.includes('/admin') || url.includes('/api/mfd');
+                        if (!isAdminOrMfd) {
+                            removeToken();
+                            store.dispatch(logoutUser());
+                            window.location.href = '/';
+                        }
+                    }
                     break;
 
                 case 403:

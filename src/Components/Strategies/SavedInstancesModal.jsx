@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { X, RefreshCw, FolderOpen, Eye, CirclePause, Trash2, CirclePlay, CloudUpload } from 'lucide-react';
 import strategyService from '../../api/services/strategyService';
+import { formatDate } from '../../utils/formatUtils';
 import DeploymentModal from './DeploymentModal';
 import InstanceDetailsModal from './InstanceDetailsModal';
 import { selectUser } from '../../store/slices/userSlice';
@@ -27,19 +28,6 @@ const SavedInstancesModal = ({ isOpen, onClose, instances, loading, onRefresh, o
 
     if (!isOpen) return null;
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            }).replace(/ /g, '-');
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
     const parseTickers = (tickers) => {
         if (Array.isArray(tickers)) return tickers;

@@ -1,8 +1,7 @@
-// API Base URL - Update this with your actual API URL
+// API Base URL - Automatically uses localhost in dev mode, production URL in builds
+const isDev = import.meta.env.DEV;
 
-const dev = false;
-
-const API_BASE_URL = dev ? 'http://localhost:8000' : 'https://8sx9uc9pfy.ap-south-1.awsapprunner.com';
+const API_BASE_URL = isDev ? 'http://localhost:8000' : 'https://8sx9uc9pfy.ap-south-1.awsapprunner.com';
 
 // API Endpoints Configuration
 export const API_ENDPOINTS = {
@@ -19,6 +18,9 @@ export const API_ENDPOINTS = {
     BROKER_LOGIN: '/api/broker/broker_login',
     BROKER_STATUS: '/api/broker/get_broker_status',
     BROKER_RECONNECT: '/api/broker/reconnect_broker',
+    ACCOUNT_DETAILS: (email) => `/api/broker/account_details?user_email=${email}`,
+    DELETE_ACCOUNT: (email, clientId) => `/api/broker/delete_account?user_email=${email}&client_id=${clientId}`,
+    UPDATE_CREDENTIALS: '/api/broker/update_credentials',
 
     // Strategies
     ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,
@@ -47,6 +49,30 @@ export const API_ENDPOINTS = {
 
     // ChatAI
     CHAT_QUERY: '/api/query',
+
+    // Admin - Access Management
+    ADMIN_ACCESS: '/admin/access',
+    ADMIN_ACCESS_REVOKE: (email) => `/admin/access/${encodeURIComponent(email)}`,
+    ADMIN_STORES: '/admin/stores',
+    ADMIN_STORE_DOCS: (storeId) => `/admin/stores/${storeId}/documents`,
+    ADMIN_STORE_UPLOAD: (storeId) => `/admin/stores/${storeId}/upload`,
+    ADMIN_STORE_DOC_DELETE: (storeId, docId) => `/admin/stores/${storeId}/documents/${docId}`,
+
+    // MFD Self-Service
+    MFD_PROFILE: '/api/mfd/profile',
+    MFD_STORE_CREATE: '/api/mfd/store/create',
+    MFD_ZOHO_CONNECT: '/api/mfd/zoho/connect',
+    MFD_ZOHO_AUTH_URL: '/api/mfd/zoho/auth-url',
+    MFD_ZOHO_CALLBACK: '/api/mfd/zoho/callback',
+    MFD_ZOHO_SYNC: '/api/mfd/zoho/sync',
+    MFD_ZOHO_STATUS: '/api/mfd/zoho/status',
+
+
+    // Stockal (uses separate service URL)
+    STOCKAL_ACCOUNT_INFO: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/account-info/${custId}`,
+    STOCKAL_BENEFICIARIES: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/beneficiaries/${custId}`,
+    STOCKAL_USER_UPDATE: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/user-update/${custId}`,
+    VALIDATE_STOCKAL_USER: (email) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/validate-user/${email}`,
 };
 
 export default API_BASE_URL;

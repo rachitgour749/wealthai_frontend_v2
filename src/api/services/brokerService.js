@@ -184,6 +184,52 @@ export const clearBrokerSession = () => {
     localStorage.removeItem('broker_session');
 };
 
+/**
+ * Get account details for a user from API
+ * @param {string} userEmail 
+ * @returns {Promise<object>}
+ */
+export const getAccountDetails = async (userEmail) => {
+    try {
+        const response = await axiosInstance.get(API_ENDPOINTS.ACCOUNT_DETAILS(userEmail));
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching account details:', error);
+        throw error;
+    }
+};
+
+/**
+ * Delete account for a user
+ * @param {string} userEmail 
+ * @param {string} clientId 
+ * @returns {Promise<object>}
+ */
+export const deleteAccount = async (userEmail, clientId) => {
+    try {
+        const response = await axiosInstance.delete(API_ENDPOINTS.DELETE_ACCOUNT(userEmail, clientId));
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        throw error;
+    }
+};
+
+/**
+ * Update broker credentials
+ * @param {object} params - Update parameters
+ * @returns {Promise<object>}
+ */
+export const updateBrokerCredentials = async (params) => {
+    try {
+        const response = await axiosInstance.put(API_ENDPOINTS.UPDATE_CREDENTIALS, params);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating broker credentials:', error);
+        throw error;
+    }
+};
+
 export const brokerService = {
     loginBroker,
     getBrokerStatus,
@@ -192,7 +238,10 @@ export const brokerService = {
     getStoredBrokerSession,
     saveLocalBrokerCredentials,
     getLocalBrokerCredentials,
-    clearBrokerSession
+    clearBrokerSession,
+    getAccountDetails,
+    deleteAccount,
+    updateBrokerCredentials
 };
 
 export default brokerService;

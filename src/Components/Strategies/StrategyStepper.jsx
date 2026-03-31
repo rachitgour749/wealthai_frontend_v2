@@ -2,7 +2,7 @@ import React from 'react';
 
 const StrategyStepper = ({ currentStep, steps }) => {
     return (
-        <div className="w-full mb-4 md:mb-6 border py-3 md:py-4 bg-gray-100 px-4 md:px-8 border-gray-300 rounded-t-[15px]">
+        <div className="w-full border py-3 md:py-4 bg-gray-100 px-4 md:px-8 border-gray-300 rounded-t-[15px]">
             <div className="flex items-center justify-between">
                 {steps.map((step, index) => {
                     const isCompleted = step.isComplete;

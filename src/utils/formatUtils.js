@@ -52,3 +52,29 @@ export const formatNumber = (value, currencySymbol = '₹') => {
 
     return num.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+/**
+ * Formats a date string or object as DD-Mon-YYYY (e.g., 24-Nov-2026).
+ * Ensures the first letter of the month is capitalized.
+ * 
+ * @param {Date|string} dateInput - The date to format
+ * @returns {string} Formatted date string
+ */
+export const formatDate = (dateInput) => {
+    if (!dateInput) return '-';
+    try {
+        const date = new Date(dateInput);
+        if (isNaN(date.getTime())) return dateInput;
+
+        // Use a consistent locale and options
+        const day = String(date.getDate()).padStart(2, '0');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+
+        return `${day}-${month}-${year}`;
+    } catch (e) {
+        return dateInput;
+    }
+};

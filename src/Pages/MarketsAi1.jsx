@@ -17,6 +17,9 @@ import Stock from '../Strategies/Stock'
 import AddBroker from '../Components/AddBroker/AddBroker'
 import { selectHasSavedCredentials, selectIsBrokerConnected } from '../store/slices/brokerSlice'
 import { useEffect } from 'react'
+import Stockal from '../Components/Stockal/Stockal'
+import { validateStockalUser } from '../store/slices/stockalSlice'
+import { message } from 'antd'
 
 const MarketsAi1 = () => {
   const dispatch = useDispatch()
@@ -33,20 +36,36 @@ const MarketsAi1 = () => {
   const isRedirectionNeeded = hasSavedCredentials || isBrokerConnected;
 
   // Switch away from AddBroker tab if details are saved or broker is connected
-  useEffect(() => {
-    if (isRedirectionNeeded && currentTab === 'AddBroker') {
-      console.log('Force redirecting to Strategies as broker is configured');
-      dispatch(setCurrentTab('Strategies'));
-    }
-  }, [isRedirectionNeeded, currentTab, dispatch])
+  // useEffect(() => {
+  //   if (isRedirectionNeeded && currentTab === 'AddBroker') {
+  //     console.log('Force redirecting to Strategies as broker is configured');
+  //     dispatch(setCurrentTab('Strategies'));
+  //   }
+  // }, [isRedirectionNeeded, currentTab, dispatch])
 
   // Get MARKETAI subscription
   const subscription = getSubscriptionByProduct(subscriptionProducts, 'MARKETAI')
   const planName = subscription?.plan_name || 'N/A'
   const validTill = subscription?.subscription_end_date ? formatDate(subscription.subscription_end_date) : 'N/A'
 
-  const handleTabChange = (tab) => {
-    dispatch(setCurrentTab(tab))
+  const handleTabChange = async (tab) => {
+    if (tab === 'Stockal' && userEmail) {
+      const hide = message.loading({ content: 'Validating user...', key: 'stockal_validation' });
+      try {
+        const result = await dispatch(validateStockalUser(userEmail)).unwrap();
+        message.success({ content: 'User validated', key: 'stockal_validation' });
+        dispatch(setCurrentTab(tab));
+      } catch (error) {
+        if (error === 'USER_NOT_FOUND') {
+          message.info({ content: 'Redirecting to onboarding...', key: 'stockal_validation' });
+          dispatch(setCurrentTab(tab));
+        } else {
+          message.error({ content: `Validation failed: ${error}`, key: 'stockal_validation' });
+        }
+      }
+    } else {
+      dispatch(setCurrentTab(tab));
+    }
   }
 
   const handleBackToStrategies = () => {
@@ -83,10 +102,9 @@ const MarketsAi1 = () => {
       case 'MyPortfolio':
         return <MyPortfolio />
       case 'AddBroker':
-        if (hasSavedCredentials || isBrokerConnected) {
-          return <Strategies />; // Safety fallback
-        }
         return <AddBroker isInline={true} />
+      case 'Stockal':
+        return <Stockal isInline={true} />
       default:
         return <Strategies />
     }
@@ -96,14 +114,10 @@ const MarketsAi1 = () => {
     return [
       { label: 'Strategies', value: 'Strategies' },
       { label: 'My Portfolio', value: 'MyPortfolio' },
-      { label: 'Add Broker', value: 'AddBroker' },
-    ].filter(tab => {
-      if (tab.value === 'AddBroker') {
-        return !hasSavedCredentials && !isBrokerConnected;
-      }
-      return true;
-    });
-  }, [hasSavedCredentials, isBrokerConnected]);
+      { label: 'Account Config', value: 'AddBroker' },
+      { label: 'Stockal', value: 'Stockal' },
+    ];
+  }, []);
 
 
   return (
@@ -115,7 +129,7 @@ const MarketsAi1 = () => {
               key={tab.value}
               className={`px-2 md:px-4 py-[2px] cursor-pointer flex justify-center items-center text-[12px] md:text-[16px] transition-all duration-300 ${currentTab === tab.value
                 ? 'bg-slate-300 text-wealth-800 font-bold rounded-t-[10px] shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1),inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-x border-slate-400 border-b-0 relative z-10'
-                : 'text-gray-500 hover:text-gray-700 font-semibold hover:-translate-y-0.5'
+                : 'text-gray-500 hover:text-gray-700 font-semibold'
                 }`}
               style={currentTab === tab.value ? {
                 animation: 'tabActive 0.6s ease-out',

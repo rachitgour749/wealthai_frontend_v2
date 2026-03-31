@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { selectUser } from '../store/slices/userSlice';
 import { selectProducts } from '../store/slices/subscriptionSlice';
 import UserAvatar from './Navbar/UserAvatar';
+import { formatDate } from '../utils/formatUtils';
 
 const MyProfilePopup = ({ isOpen, onClose }) => {
     const user = useSelector(selectUser);
@@ -96,8 +97,8 @@ const MyProfilePopup = ({ isOpen, onClose }) => {
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-2">
                                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${subscription.status === 'active'
-                                                                ? 'bg-green-100 text-green-700'
-                                                                : 'bg-blue-100 text-blue-700'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-blue-100 text-blue-700'
                                                             }`}>
                                                             {subscription.status === 'trial' ? 'Trial' : 'Active'}
                                                         </span>
@@ -106,9 +107,7 @@ const MyProfilePopup = ({ isOpen, onClose }) => {
                                                 <div className="text-right">
                                                     <p className="text-xs text-gray-500">Valid Till</p>
                                                     <p className="text-sm font-semibold text-gray-800">
-                                                        {subscription.subscription_end_date
-                                                            ? new Date(subscription.subscription_end_date).toLocaleDateString()
-                                                            : 'N/A'}
+                                                        {formatDate(subscription.subscription_end_date)}
                                                     </p>
                                                 </div>
                                             </div>

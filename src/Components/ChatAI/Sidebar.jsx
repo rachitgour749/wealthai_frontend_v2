@@ -1,7 +1,14 @@
 import React from 'react';
-import { Plus, Trash2, X, Menu } from 'lucide-react';
+import { Plus, Trash2, X, Menu, Database, Users, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const ADMIN_EMAILS = [
+    'vipulkhandelwal25@gmail.com',
+    'Moneycompoundinfo@gmail.com',
+    'rachit.gour749@gmail.com',
+    'iamshourya007@gmail.com'
+];
 
 export function Sidebar({
     conversations,
@@ -11,11 +18,17 @@ export function Sidebar({
     onNewChat,
     isOpen,
     toggleSidebar,
-    isMobile
+    isMobile,
+    userEmail,
+    onOpenFileManager,
+    onOpenTenantAccess,
+    onOpenMFDSettings
 }) {
     const sortedConvs = Object.values(conversations).sort((a, b) =>
         new Date(b.updatedAt) - new Date(a.updatedAt)
     );
+
+    const isAdmin = userEmail && ADMIN_EMAILS.includes(userEmail);
 
     const sidebarVariants = {
         open: {
@@ -149,6 +162,41 @@ export function Sidebar({
                                     ))
                                 )}
                             </AnimatePresence>
+                        </div>
+
+                        {/* MFD Settings - visible to all users */}
+                        <div className="p-3 border-t border-wealth-700/50 min-w-72">
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={onOpenMFDSettings}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-wealth-700/30 hover:bg-wealth-700/60 text-teal-300 hover:text-[#e6ae5b] text-xs font-medium transition-all border border-transparent hover:border-wealth-600/50"
+                                    title="Data & Integrations"
+                                >
+                                    <Settings size={14} />
+                                    <span>Data & Integrations</span>
+                                </button>
+                            </div>
+                            {/* Admin Actions - visible to admin emails only */}
+                            {isAdmin && (
+                                <div className="flex gap-2 mt-2">
+                                    <button
+                                        onClick={onOpenFileManager}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-wealth-700/30 hover:bg-wealth-700/60 text-teal-300 hover:text-[#5bc4e6] text-xs font-medium transition-all border border-transparent hover:border-wealth-600/50"
+                                        title="File Manager"
+                                    >
+                                        <Database size={14} />
+                                        <span>Files</span>
+                                    </button>
+                                    <button
+                                        onClick={onOpenTenantAccess}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-wealth-700/30 hover:bg-wealth-700/60 text-teal-300 hover:text-[#e6ae5b] text-xs font-medium transition-all border border-transparent hover:border-wealth-600/50"
+                                        title="Tenant Access"
+                                    >
+                                        <Users size={14} />
+                                        <span>Access</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </motion.aside>
                 )}

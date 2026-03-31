@@ -97,7 +97,7 @@ const ResultMetricCards = ({ metrics = {}, strategyType }) => {
     ];
 
     if (isPayout) {
-        orderedMetricsKeys.push('total_withdraw_amount');
+        orderedMetricsKeys.push('total_withdrawn');
     }
 
     const labelsMap = {
@@ -109,7 +109,8 @@ const ResultMetricCards = ({ metrics = {}, strategyType }) => {
         'calmar_ratio': 'Calmar Ratio',
         'max_drawdown': 'Max Drawdown',
         'total_trades': 'Total Trades',
-        'total_withdraw_amount': 'Total Withdraw Amount'
+        'total_withdraw_amount': 'Total Withdraw Amount',
+        'total_withdrawn': 'Total Withdraw Amount'
     };
 
     const displayMetrics = orderedMetricsKeys.map(key => {

@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { X, Info, Settings, Users, Link, Trash2, AlertTriangle, CheckSquare, Square } from 'lucide-react';
 import strategyService from '../../api/services/strategyService';
 import { showNotification } from '../../store/slices/uiSlice';
+import { formatDate } from '../../utils/formatUtils';
 
 const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
     const dispatch = useDispatch();
@@ -12,19 +13,6 @@ const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
 
     if (!isOpen || !instance) return null;
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            }).replace(/ /g, '-');
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
     const getStatus = (instance) => {
         const apiStatus = instance.status?.toLowerCase();

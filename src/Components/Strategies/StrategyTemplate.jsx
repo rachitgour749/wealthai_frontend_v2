@@ -591,7 +591,7 @@ const StrategyTemplate = ({ strategyId, onBack }) => {
                         useCustomDate={useCustomDate}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mt-[-10px] md:mt-[-24.5px] p-4 md:p-[20px] border border-gray-300">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mt-[-1px] p-4 md:p-[20px] border border-gray-300">
                         {/* Left Column (8 units) */}
                         <div className="lg:col-span-6 flex flex-col gap-6 h-full">
                             <ETFUniverseSelection

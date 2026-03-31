@@ -168,8 +168,7 @@ const Navbar = ({ setCurrentPage }) => {
                             }`}>
                             {/* Reconnect SVG Icon - Two circular arrows */}
                             <svg
-                                className={`w-[22px] h-[22px] ${isBrokerConnected ? 'text-emerald-500' : 'text-red-500'} ${!isBrokerConnected ? 'animate-spin' : ''}`}
-                                style={{ animationDuration: '3s' }}
+                                className={`w-[22px] h-[22px] ${isBrokerConnected ? 'text-emerald-500' : 'text-red-500'}`}
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
@@ -185,11 +184,6 @@ const Navbar = ({ setCurrentPage }) => {
                                 <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
                             </svg>
                         </div>
-                        {/* Status Indicator Dot */}
-                        <span className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white shadow-sm ${isBrokerConnected
-                            ? 'bg-emerald-500'
-                            : 'bg-red-500'
-                            }`} />
                     </div>
                 )}
 

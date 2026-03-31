@@ -6,6 +6,9 @@ import { API_ENDPOINTS } from '../api/config/apiConfig';
 import { ChatInterface } from '../Components/ChatAI/ChatInterface';
 import { Sidebar } from '../Components/ChatAI/Sidebar';
 import { CitationModal } from '../Components/ChatAI/CitationModal';
+import FileManagerPanel from '../Components/ChatAI/FileManagerPanel';
+import TenantAccessPanel from '../Components/ChatAI/TenantAccessPanel';
+import MFDSettingsPanel from '../Components/ChatAI/MFDSettingsPanel';
 
 const ChatAi1 = () => {
   const user = useSelector(selectUser);
@@ -15,6 +18,14 @@ const ChatAi1 = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [citationModal, setCitationModal] = useState({ isOpen: false, citations: [] });
+
+  // Admin panel state
+  const [fileManagerOpen, setFileManagerOpen] = useState(false);
+  const [tenantAccessOpen, setTenantAccessOpen] = useState(false);
+  const [mfdSettingsOpen, setMFDSettingsOpen] = useState(false);
+  const [adminKey, setAdminKey] = useState(() => localStorage.getItem('chatai_admin_key') || '');
+  const [showAdminKeyPrompt, setShowAdminKeyPrompt] = useState(false);
+  const [pendingPanel, setPendingPanel] = useState(null);
 
   // Check if mobile
   useEffect(() => {
@@ -121,7 +132,7 @@ const ChatAi1 = () => {
         {
           headers: {
             'x-session-id': '3543a943-8043-4dcc-8cf9-db6f3168ad12',
-            'x-tenant-id': 'money_compound'
+            'x-tenant-id': user?.email || 'money_compound'
           }
         }
       );
@@ -134,7 +145,8 @@ const ChatAi1 = () => {
           intent: response.data.intent,
           citations: response.data.citations || [],
           is_fallback: response.data.is_fallback || false,
-          active_client: response.data.active_client
+          active_client: response.data.active_client,
+          follow_ups: response.data.follow_ups || []
         },
         timestamp: new Date().toISOString()
       };
@@ -178,6 +190,36 @@ const ChatAi1 = () => {
     setCitationModal({ isOpen: true, citations });
   };
 
+  // Admin panel open handlers
+  const openAdminPanel = (panelType) => {
+    if (!adminKey) {
+      setPendingPanel(panelType);
+      setShowAdminKeyPrompt(true);
+      return;
+    }
+    if (panelType === 'files') setFileManagerOpen(true);
+    else if (panelType === 'access') setTenantAccessOpen(true);
+  };
+
+  // Called by admin panels when they get a 401 — clears bad key and re-prompts
+  const handleAdminAuthError = (panelType) => {
+    setAdminKey('');
+    localStorage.removeItem('chatai_admin_key');
+    setFileManagerOpen(false);
+    setTenantAccessOpen(false);
+    setPendingPanel(panelType);
+    setShowAdminKeyPrompt(true);
+  };
+
+  const handleAdminKeySubmit = () => {
+    if (!adminKey.trim()) return;
+    localStorage.setItem('chatai_admin_key', adminKey);
+    setShowAdminKeyPrompt(false);
+    if (pendingPanel === 'files') setFileManagerOpen(true);
+    else if (pendingPanel === 'access') setTenantAccessOpen(true);
+    setPendingPanel(null);
+  };
+
   const currentConversation = currentConvId ? conversations[currentConvId] : null;
 
   return (
@@ -191,6 +233,10 @@ const ChatAi1 = () => {
         isOpen={sidebarOpen}
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         isMobile={isMobile}
+        userEmail={user?.email}
+        onOpenFileManager={() => openAdminPanel('files')}
+        onOpenTenantAccess={() => openAdminPanel('access')}
+        onOpenMFDSettings={() => setMFDSettingsOpen(true)}
       />
 
       <ChatInterface
@@ -206,6 +252,59 @@ const ChatAi1 = () => {
         onClose={() => setCitationModal({ isOpen: false, citations: [] })}
         citations={citationModal.citations}
       />
+
+      <FileManagerPanel
+        isOpen={fileManagerOpen}
+        onClose={() => setFileManagerOpen(false)}
+        adminKey={adminKey}
+        onAuthError={() => handleAdminAuthError('files')}
+      />
+
+      <TenantAccessPanel
+        isOpen={tenantAccessOpen}
+        onClose={() => setTenantAccessOpen(false)}
+        adminKey={adminKey}
+        onAuthError={() => handleAdminAuthError('access')}
+      />
+
+      <MFDSettingsPanel
+        isOpen={mfdSettingsOpen}
+        onClose={() => setMFDSettingsOpen(false)}
+        userEmail={user?.email}
+      />
+
+      {/* Admin Key Prompt Modal */}
+      {showAdminKeyPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm p-6 rounded-2xl bg-[#0d2626] border border-[#1a4040] shadow-2xl mx-4">
+            <h3 className="text-white font-bold text-lg mb-1">Admin Key Required</h3>
+            <p className="text-gray-400 text-xs mb-4">Enter your admin key to access management panels.</p>
+            <input
+              type="password"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminKeySubmit()}
+              placeholder="Admin API Key"
+              autoFocus
+              className="w-full px-3 py-2.5 bg-[#0a1a1a] border border-[#1a4040] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#e6ae5b] transition-colors mb-3"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowAdminKeyPrompt(false); setPendingPanel(null); setAdminKey(''); }}
+                className="flex-1 py-2 bg-[#1a3535] border border-[#2a5050] rounded-lg text-gray-300 text-sm hover:bg-[#1f4040]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdminKeySubmit}
+                className="flex-1 py-2 bg-gradient-to-r from-[#e6ae5b] to-[#c4912e] text-[#0d2626] font-bold text-sm rounded-lg hover:opacity-90"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

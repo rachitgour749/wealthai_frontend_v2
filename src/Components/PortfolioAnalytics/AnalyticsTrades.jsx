@@ -1,5 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Download } from 'lucide-react';
+import { formatDate } from '../../utils/formatUtils';
 
 const AnalyticsTrades = ({ trades, loading }) => {
     const fileInputRef = useRef(null);
@@ -37,17 +38,6 @@ const AnalyticsTrades = ({ trades, loading }) => {
         }).format(value || 0);
     };
 
-    const formatDate = (dateStr) => {
-        try {
-            return new Date(dateStr).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            });
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({
