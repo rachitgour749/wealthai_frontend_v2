@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { formatCurrency } from '../../../utils/formatUtils';
+﻿import React, { useState } from 'react';
+import { formatCurrency, getCurrencySymbol } from '../../../utils/formatUtils';
 import TradesTransactions from './TradesTransactions';
 import CostAnalysis from './CostAnalysis';
 
@@ -12,14 +12,7 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
         { id: 'costs', label: 'Costs' },
     ];
 
-    const getCurrencySymbol = (type) => {
-        const t = (type || '').toLowerCase();
-        // Match both exact IDs and international strategy types
-        if (t === 'etf_us' || t.includes('international')) return '$';
-        return '₹';
-    };
-
-    const currencySymbol = getCurrencySymbol(strategyType);
+    const currencySymbol = getCurrencySymbol(strategyType, strategyName);
 
     const formatVal = (val, isPct = false, isCurrency = false) => {
         if (val === undefined || val === null) return '-';
@@ -156,6 +149,7 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
                     <div className="animate-[fadeIn_0.3s_ease-out]">
                         <TradesTransactions
                             strategyType={strategyType || results.strategy_type}
+                            strategyName={strategyName}
                             transactions={results.transaction_log || []}
                         />
                     </div>
@@ -165,6 +159,7 @@ const ResultTabs = ({ metrics = {}, strategyName = 'Strategy', results = {}, str
                     <div className="animate-[fadeIn_0.3s_ease-out]">
                         <CostAnalysis
                             strategyType={strategyType || results.strategy_type}
+                            strategyName={strategyName}
                             costs={results.cost_breakdown || results.costs_breakdown || []}
                         />
                     </div>

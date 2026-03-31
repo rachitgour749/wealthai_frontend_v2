@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, TrendingUp, Calendar, DollarSign, Percent, Award } from 'lucide-react';
+import { getCurrencySymbol } from '../../utils/formatUtils';
 
 const BestCombinationsModal = ({ isOpen, onClose, combinations, onLoadCombination, strategyType, strategyConfig }) => {
     const [selectedId, setSelectedId] = React.useState(null);
@@ -12,7 +13,7 @@ const BestCombinationsModal = ({ isOpen, onClose, combinations, onLoadCombinatio
 
     if (!isOpen) return null;
 
-    const currencySymbol = strategyType === 'International_ETF_Rotation' ? '$' : '₹';
+    const currencySymbol = getCurrencySymbol(strategyType, strategyConfig?.name);
     const selectedCombo = combinations.find(c => c.id === selectedId) || combinations[0];
 
     return (

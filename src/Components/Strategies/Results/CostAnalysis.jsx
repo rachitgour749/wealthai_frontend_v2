@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { formatCurrency } from '../../../utils/formatUtils';
+﻿import React, { useState, useEffect } from 'react';
+import { formatCurrency, getCurrencySymbol } from '../../../utils/formatUtils';
 import strategyService from '../../../api/services/strategyService';
 
-const CostAnalysis = ({ strategyType, costs = [] }) => {
+const CostAnalysis = ({ strategyType, strategyName, costs = [] }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const getCurrencySymbol = (type) => {
-        const t = (type || '').toLowerCase();
-        if (t === 'etf_us' || t.includes('international')) return '$';
-        return '₹';
-    };
-
-    const currencySymbol = getCurrencySymbol(strategyType);
+    const currencySymbol = getCurrencySymbol(strategyType, strategyName);
 
     useEffect(() => {
         const processData = () => {
@@ -72,7 +66,7 @@ const CostAnalysis = ({ strategyType, costs = [] }) => {
 
     if (!data.length) return (
         <div className="p-10 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-xl m-4 bg-gray-50/30">
-            <div className="text-3xl mb-2 opacity-50">💰</div>
+            <div className="text-3xl mb-2 opacity-50">≡ƒÆ░</div>
             <p className="font-bold text-xs uppercase tracking-[0.2em] text-gray-500">No cost data found for {strategyType}</p>
             <p className="text-[10px] mt-2 text-gray-400">Please check the browser console for logs if this is unexpected.</p>
         </div>

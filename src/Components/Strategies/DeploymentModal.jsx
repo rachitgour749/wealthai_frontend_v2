@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { X, Plus, Trash2, Info } from 'lucide-react';
 import { getToken } from '../../utils/tokenManager';
@@ -30,7 +30,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
 
-    const isInternational = strategyType === 'ETF_US' || strategyType === 'International_ETF_Rotation' || strategyType?.includes('International');
+    const isInternational = strategyType === 'ETF_US' || strategyType === 'International_ETF_Rotation' || strategyType === 'US_ETF_Swing_Strategy' || strategyType?.includes('International');
     const currencySymbol = isInternational ? '$' : '₹';
 
     // Format number with Indian comma notation or standard notation
@@ -251,8 +251,13 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
             return;
         }
 
-        if (clients.length === 0) {
+        if (!isInternational && clients.length === 0) {
             dispatch(showNotification({ message: 'Please add at least one client before deploying.', type: 'error' }));
+            return;
+        }
+
+        if (isInternational && !telegramNotification && !emailNotification) {
+            dispatch(showNotification({ message: 'Please enable at least one notification channel (Email or Telegram).', type: 'error' }));
             return;
         }
 
@@ -459,7 +464,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                                     Notification Settings
                                 </label>
                                 <div className="space-y-1.5">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    {/* <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={telegramNotification}
@@ -467,7 +472,7 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                                             className="w-4 h-4 text-wealth-600 border-gray-300 rounded focus:ring-wealth-500"
                                         />
                                         <span className="text-sm text-gray-700">Telegram Notification</span>
-                                    </label>
+                                    </label> */}
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
@@ -540,11 +545,41 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                             {isClient && clients.length === 0 ? (
                                 <div className="border border-gray-300 rounded-[5px] overflow-hidden mt-2 bg-gray-50 p-2">
                                     {isInternational ? (
-                                        <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-[10px] text-center">
-                                            <h3 className="text-blue-900 text-sm font-bold uppercase tracking-wider mb-2">Auto-Deployment Coming Soon</h3>
-                                            <p className="text-blue-800/80 text-[12px] leading-relaxed">
-                                                We are integrating with <strong>Stockal</strong> broker for seamless, one-click trading in the US market. Stay tuned for real-time order execution!
-                                            </p>
+                                        <div className="rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                                            {/* Header */}
+                                            <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                    </span>
+                                                    <span className="text-white text-[11px] font-semibold tracking-wide">SIGNAL MODE</span>
+                                                </div>
+                                                <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Active</span>
+                                            </div>
+                                            {/* Body */}
+                                            <div className="bg-white px-4 py-3 flex items-center gap-4">
+                                                <p className="text-[11px] text-slate-500 leading-relaxed flex-1">
+                                                    Live trade signals will be sent to your registered channels instantly whenever market conditions are triggered.
+                                                </p>
+                                                <div className="flex flex-col gap-1.5 shrink-0">
+                                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 min-w-[110px]">
+                                                        <svg className="w-3 h-3 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                        <span className="text-[10.5px] font-medium text-slate-700 flex-1">Email</span>
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 min-w-[110px]">
+                                                        <svg className="w-3 h-3 text-sky-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.03 9.568c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.893.653z" /></svg>
+                                                        <span className="text-[10.5px] font-medium text-slate-700 flex-1">Telegram</span>
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Footer */}
+                                            <div className="bg-slate-50 border-t border-slate-100 px-4 py-2 flex items-center gap-1.5">
+                                                <svg className="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <span className="text-[10px] text-slate-400">Auto-execution via <strong className="text-slate-500">Stockal</strong> broker is coming soon — one-click order placement in your US brokerage account.</span>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center gap-4">
@@ -695,8 +730,8 @@ const DeploymentModal = ({ isOpen, onClose, strategyName, strategyType, userEmai
                     </button>
                     <button
                         onClick={handleDeploy}
-                        disabled={loading || clients.length === 0 || isInternational}
-                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || clients.length === 0 || isInternational
+                        disabled={loading || (isInternational ? !(telegramNotification || emailNotification) : clients.length === 0)}
+                        className={`px-5 py-1 rounded-[5px] transition-colors font-medium text-[13px] flex items-center gap-2 ${loading || (isInternational ? !(telegramNotification || emailNotification) : clients.length === 0)
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-wealth-800 hover:bg-wealth-900'
                             } text-white`}

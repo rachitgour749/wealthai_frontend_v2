@@ -2,7 +2,7 @@ import store from '../store/store';
 import Cookies from 'js-cookie';
 import { saveToken } from '../utils/tokenManager';
 import { loginUser, logoutUser } from '../store/slices/userSlice';
-import { fetchProducts, clearSubscriptionData } from '../store/slices/subscriptionSlice';
+import { fetchProducts, clearSubscriptionData, fetchCredits } from '../store/slices/subscriptionSlice';
 import { resetNavigation } from '../store/slices/navigationSlice';
 import { clearBrokerConnection, updateBrokerConnectionStatus, setSavedCredentials } from '../store/slices/brokerSlice';
 import * as authService from '../api/services/authService';
@@ -105,13 +105,14 @@ export const handleGoogleLoginSuccess = async (credentialResponse) => {
 
         // Fetch user's subscription products
         try {
-
             const resultAction = await store.dispatch(fetchProducts(googleUserInfo.email));
 
             // Check if products fetch was successful
             if (fetchProducts.fulfilled.match(resultAction)) {
-                const products = resultAction.payload;
+                // Also fetch credits
+                store.dispatch(fetchCredits(googleUserInfo.email));
 
+                const products = resultAction.payload;
 
                 // Trial popup will be shown automatically by subscriptionSlice
                 // if products array is empty

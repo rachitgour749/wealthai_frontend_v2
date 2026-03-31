@@ -5,9 +5,9 @@ const strategyService = {
     /**
      * Fetch available assets for a strategy
      */
-    fetchAssets: async (strategyType) => {
+    fetchAssets: async (market, assetType) => {
         try {
-            const response = await axiosInstance.get(API_ENDPOINTS.ASSETS(strategyType));
+            const response = await axiosInstance.get(API_ENDPOINTS.ASSETS(market, assetType));
             return response.data;
         } catch (error) {
             console.error('Error fetching assets:', error);
@@ -18,9 +18,9 @@ const strategyService = {
     /**
      * Fetch asset overview (universe options) for a strategy
      */
-    fetchAssetsOverview: async (strategyType) => {
+    fetchAssetsOverview: async (market, assetType) => {
         try {
-            const response = await axiosInstance.get(API_ENDPOINTS.ASSETS_OVERVIEW(strategyType));
+            const response = await axiosInstance.get(API_ENDPOINTS.ASSETS_OVERVIEW(market, assetType));
             return response.data;
         } catch (error) {
             console.error('Error fetching assets overview:', error);
@@ -31,10 +31,11 @@ const strategyService = {
     /**
      * Fetch date range for given strategy and tickers
      */
-    fetchDateRange: async (strategyType, tickers) => {
+    fetchDateRange: async (market, assetType, tickers) => {
         try {
             const response = await axiosInstance.post(API_ENDPOINTS.DATE_RANGE, {
-                strategy_type: strategyType,
+                market: market,
+                asset_type: assetType,
                 tickers: tickers
             });
             return response.data;

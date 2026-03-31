@@ -2,7 +2,7 @@ import React from 'react';
 
 const StrategyHeader = ({ name, onBack, instancesCount = 0, onInstancesClick, onInfoClick }) => {
     return (
-        <div className="bg-gradient-to-r from-wealth-800 to-wealth-900 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl flex justify-between items-center shadow-lg">
+        <div className="bg-gradient-to-r relative from-wealth-800 to-wealth-900 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl flex justify-between items-center shadow-lg">
 
             <button
                 onClick={onBack}

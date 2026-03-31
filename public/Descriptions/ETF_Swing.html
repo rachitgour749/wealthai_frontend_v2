@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF Swing Strategy | MarketsAI - Powered by WealthAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f3d39;
+            --primary-light: #319795;
+            --secondary: #5bcb7f;
+            --bg-light: #e1fbe9;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --white: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a5c56 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 700px;
+            font-weight: 400;
+        }
+
+        .section-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #edf2f7;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-light);
+            border-radius: 2px;
+        }
+
+        h3 {
+            color: var(--primary-light);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-item {
+            background: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-light);
+            transition: transform 0.2s;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .feature-item h4 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .feature-item p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .formula {
+            background: #f1f5f9;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin: 1rem 0;
+            border-left: 4px solid #cbd5e1;
+        }
+
+        .accordion {
+            margin: 1.5rem 0;
+        }
+
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: white;
+        }
+
+        .accordion-header {
+            padding: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            font-weight: 600;
+            color: var(--primary);
+            transition: all 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-header.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #ffffff;
+        }
+
+        .accordion-content-inner {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="hero">
+            <h1>ETF Swing Strategy</h1>
+            <p>A rule-based, medium-term trend following strategy that captures price momentum using technical filters
+                and slot-based portfolio construction.</p>
+        </header>
+
+        <section class="section-card">
+            <h2>Executive Summary</h2>
+            <p>The ETF Swing Strategy aims to minimize market volatility impacts while participating in established
+                trends. By focusing on ETFs relative to their Moving Averages, it ensures capital is only deployed when
+                momentum is confirmed.</p>
+
+            <div class="grid">
+                <div class="feature-item">
+                    <h4>Trend Filtered</h4>
+                    <p>Uses SMA-based technical qualification to separate trends from noise.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Rule-Based Execution</h4>
+                    <p>Entries and exits are calculated on EOD data and executed at next-day Open.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Capital Rotation</h4>
+                    <p>Dynamic compounding ensures winners contribute more to portfolio growth.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Risk Guarded</h4>
+                    <p>Automatic Stop Loss protection active for every single deployment.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <h2>Signal Logic</h2>
+            <p>Signals are generated based on the relationship between the daily closing price and the Simple Moving
+                Average (SMA).</p>
+
+            <h3>Entry Qualification</h3>
+            <p>An ETF is eligible for entry if its daily close is above the trend average. Candidates are then ranked by
+                proximity to the SMA.</p>
+            <div class="formula">Daily Close (T) > SMA (T)</div>
+            <div class="formula">Ranking = (Close - SMA) / SMA (Smallest Positive Preferred)</div>
+
+            <h3>Exit Conditions</h3>
+            <ul>
+                <li><strong>Profit Exit:</strong> Price crosses below SMA AND profit threshold is reached.</li>
+                <li><strong>Stop Loss:</strong> Price drops by more than the configured risk percentage from entry.</li>
+                <li><strong>Retention:</strong> If price falls below SMA but profit target isn't met, position is
+                    retained until SL is hit.</li>
+            </ul>
+        </section>
+
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>Portfolio & Capital Rules</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <ul>
+                            <li><strong>Slot Allocation:</strong> Portfolio is divided into logical units called
+                                "slots".</li>
+                            <li><strong>Cash Handling:</strong> Unused slots remain in cash/liquid assets when trends
+                                are absent.</li>
+                            <li><strong>Full Compounding:</strong> Realized capital is reapportioned across slots for
+                                next entries.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <span>Execution Timeline</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        <p>To reduce slippage and intraday noise, all trade execution follows a fixed T+1 cycle:</p>
+                        <ul style="margin-top: 1rem;">
+                            <li><strong>Day T (Close):</strong> Signal generated based on the day's closing price.</li>
+                            <li><strong>Day T+1 (Open):</strong> Trade executed at the market open price.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            &copy; 2026 WealthAI. This document defines the business logic and execution rules for the Strategy Engine.
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isActive = this.classList.contains('active');
+
+                document.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.nextElementSibling.style.maxHeight = null;
+                });
+
+                if (!isActive) {
+                    this.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

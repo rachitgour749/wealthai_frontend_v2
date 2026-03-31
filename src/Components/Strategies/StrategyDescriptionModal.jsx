@@ -13,13 +13,14 @@ const StrategyDescriptionModal = ({ isOpen, onClose, strategyId }) => {
     const fetchContent = async () => {
         try {
             setLoading(true);
-            // Map strategy IDs to their HTML files
             const fileMap = {
                 'ETF': 'ETF.html',
                 'RS_ETF': 'RS_ETF.html',
                 'ETF_Payout': 'ETF_Payout.html',
                 'International_ETF_Rotation': 'ETF_US.html',
-                'ETF_Rotation': 'ETF.html' // Fallback for rotation if named differently
+                'ETF_Rotation': 'ETF.html',
+                'ETF_Swing': 'ETF_Swing.html',
+                'ETF_US_Swing': 'ETF_US_Swing.html'
             };
 
             const fileName = fileMap[strategyId] || 'ETF.html';
@@ -46,7 +47,6 @@ const StrategyDescriptionModal = ({ isOpen, onClose, strategyId }) => {
                 className="bg-white w-full max-w-5xl h-[85vh] md:h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
                 <div className="px-6 py-4 border-bottom bg-wealth-900 text-white flex justify-between items-center shadow-md">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-wealth-100/20 flex items-center justify-center">
@@ -67,7 +67,6 @@ const StrategyDescriptionModal = ({ isOpen, onClose, strategyId }) => {
                     </button>
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 overflow-hidden relative bg-[#f8fafc]">
                     {loading ? (
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -86,11 +85,10 @@ const StrategyDescriptionModal = ({ isOpen, onClose, strategyId }) => {
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="px-6 py-3 bg-wealth-50 border-t flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2 bg- wealth-900 border border-wealth-900 text-wealth-900 bg-transparent hover:bg-wealth-50 font-bold rounded-lg transition-all active:scale-95 text-sm"
+                        className="px-6 py-2 bg-transparent border font-bold rounded-lg transition-all active:scale-95 text-sm"
                         style={{ borderColor: '#0f3d39', color: '#0f3d39' }}
                     >
                         Close

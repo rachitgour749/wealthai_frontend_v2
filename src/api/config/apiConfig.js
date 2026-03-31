@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
     USER_SUBSCRIPTION: (email) => `/api/subscription/user/${email}`,
     ACTIVATE_TRIAL: '/api/subscription/activate-trial',
     PRODUCTS: (email) => `/api/subscription/products/${email}`,
+    FETCH_CREDITS: (email) => `/api/subscription/credits/${email}`,
 
     // Broker
     GET_DETAILS: (email) => `/api/get_details?user_email=${email}`,
@@ -24,8 +25,8 @@ export const API_ENDPOINTS = {
     UPDATE_CREDENTIALS: '/api/broker/update_credentials',
 
     // Strategies
-    ASSETS: (strategyType) => `/api/strategy/assets?strategy_type=${strategyType}`,
-    ASSETS_OVERVIEW: (strategyType) => `/api/strategy/assets/overview?strategy_type=${strategyType}`,
+    ASSETS: (market, assetType) => `/api/strategy/assets?market=${market}&asset_type=${assetType}`,
+    ASSETS_OVERVIEW: (market, assetType) => `/api/strategy/assets/overview?market=${market}&asset_type=${assetType}`,
     DATE_RANGE: '/api/strategy/date-range',
     RUN_BACKTEST: '/api/run_backtest',
     CACHED_TRANSACTION_LOG: (strategyType) => `/api/strategy/transaction-log?strategy_type=${strategyType}`,
@@ -69,12 +70,36 @@ export const API_ENDPOINTS = {
     MFD_ZOHO_STATUS: '/api/mfd/zoho/status',
 
     // Stockal (uses separate service URL)
+    STOCKAL_BASE: isDev ? 'http://localhost:8001' : API_BASE_URL,
     STOCKAL_ACCOUNT_INFO: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/account-info/${custId}`,
     STOCKAL_BENEFICIARIES: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/beneficiaries/${custId}`,
     STOCKAL_USER_UPDATE: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/user-update/${custId}`,
     STOCKAL_CREATE_USER: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/create-user`,
     VALIDATE_STOCKAL_USER: (email) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/validate-user/${email}`,
     STOCKAL_USERNAME_CHECK: (username) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/username-check/${username}`,
+    STOCKAL_DOCUMENT_UPLOAD: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/document-upload`,
+    STOCKAL_EKYC_STATUS: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/ekyc-status/${custId}`,
+    STOCKAL_EKYC_URL: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/ekyc-url/${custId}`,
+    STOCKAL_KYC_SUBMIT: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/kyc-submit/${custId}`,
+    STOCKAL_ACCOUNT_SUMMARY: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/account-summary/${custId}`,
+    STOCKAL_PORTFOLIO: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/portfolio/${custId}`,
+    STOCKAL_POSITIONS: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/positions/${custId}`,
+    STOCKAL_HOLDINGS: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/holdings/${custId}`,
+    STOCKAL_ORDERS: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/orders`,
+    STOCKAL_ORDER_OPERATIONS: (orderId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/orders/${orderId}`,
+    STOCKAL_ORDER_CANCEL: (orderId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/orders/cancel/${orderId}`,
+    STOCKAL_MARKET_PRICE: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/market/current-price`,
+    STOCKAL_MARKET_HISTORY: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/market/historical-prices`,
+    STOCKAL_PLAN_LIST: `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/plan-list`,
+    STOCKAL_PLAN_ADD: (custId) => `${isDev ? 'http://localhost:8001' : API_BASE_URL}/api/v1/stockal/plan-add/${custId}`,
+
+    // Webhook
+    GET_WEBHOOKS: (userId) => `/api/webhook/user/${userId}`,
+    TOGGLE_WEBHOOK_STATUS: (runId, status) => `/api/webhook/status/${runId}/${status}`,
+    DELETE_WEBHOOK: (runId) => `/api/webhook/delete/${runId}`,
+    CREATE_WEBHOOK: '/api/webhook/create',
+    RA_CODES: '/api/webhook/ra',
+    RA_STRATEGIES: (raCode) => `/api/webhook/ra/${raCode}/strategies`,
 };
 
 export default API_BASE_URL;

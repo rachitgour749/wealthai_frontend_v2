@@ -46,11 +46,11 @@ axiosInstance.interceptors.response.use(
             switch (status) {
                 case 401:
                     // Unauthorized - Token expired or invalid
-                    // Don't redirect for admin/MFD routes (they have their own auth)
+                    // Don't redirect for admin/MFD routes or Stockal service (they have their own auth)
                     {
                         const url = error.config?.url || '';
-                        const isAdminOrMfd = url.includes('/admin') || url.includes('/api/mfd');
-                        if (!isAdminOrMfd) {
+                        const isExempt = url.includes('/admin') || url.includes('/api/mfd') || url.includes('8001') || url.includes('stockal');
+                        if (!isExempt) {
                             removeToken();
                             store.dispatch(logoutUser());
                             window.location.href = '/';

@@ -109,6 +109,18 @@ const AccountInfo = ({ custId }) => {
                     <InfoItem label="Reason" value={accountInfo.kycDetails?.reason} />
                     <InfoItem label="Approved" value={new Date(accountInfo.kycDetails?.approvedAt).toLocaleDateString()} />
                 </InfoCard>
+
+                {/* Subscription Plan */}
+                <InfoCard title="Subscription Plan" icon={ShieldCheck}>
+                    <div className="flex items-center justify-between mb-1 p-1.5 bg-gray-50 rounded border border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${accountInfo.planDetails?.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <span className="text-[11px] font-bold text-wealth-900 uppercase tracking-widest">{accountInfo.planDetails?.status || 'No Plan'}</span>
+                        </div>
+                    </div>
+                    <InfoItem label="Plan Name" value={accountInfo.planDetails?.planName} />
+                    <InfoItem label="Plan ID" value={accountInfo.planDetails?.planId} />
+                </InfoCard>
             </div>
 
             {/* Account Product Info */}

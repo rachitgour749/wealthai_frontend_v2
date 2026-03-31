@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { formatCurrency, formatDate } from '../../../utils/formatUtils';
+﻿import React, { useState, useEffect } from 'react';
+import { formatCurrency, formatDate, getCurrencySymbol, formatQty } from '../../../utils/formatUtils';
 import strategyService from '../../../api/services/strategyService';
 
-const TradesTransactions = ({ strategyType, transactions = [] }) => {
+const TradesTransactions = ({ strategyType, strategyName, transactions = [] }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const getCurrencySymbol = (type) => {
-        const t = (type || '').toLowerCase();
-        if (t === 'etf_us' || t.includes('international')) return '$';
-        return '₹';
-    };
-
-    const currencySymbol = getCurrencySymbol(strategyType);
+    const currencySymbol = getCurrencySymbol(strategyType, strategyName);
 
     useEffect(() => {
         const processData = () => {
@@ -157,7 +151,7 @@ const TradesTransactions = ({ strategyType, transactions = [] }) => {
 
     if (!data.length) return (
         <div className="p-10 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-xl m-4 bg-gray-50/30">
-            <div className="text-3xl mb-2 opacity-50">📜</div>
+            <div className="text-3xl mb-2 opacity-50">≡ƒô£</div>
             <p className="font-bold text-xs uppercase tracking-[0.2em] text-gray-500">No transaction data found for {strategyType}</p>
             <p className="text-[10px] mt-2 text-gray-400">If you believe this is an error, please check the browser console for logs.</p>
         </div>
@@ -224,7 +218,7 @@ const TradesTransactions = ({ strategyType, transactions = [] }) => {
                                         </span>
                                     </td>
                                     <td className="py-2 px-4 text-center">
-                                        <div className="inline-flex flex-col items-start space-y-1 w-28">
+                                        <div className="flex flex-col items-center space-y-1 w-full">
                                             {row.items.map((item, i) => (
                                                 <div key={i} className="flex items-center gap-3">
                                                     <span className={`w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-full text-[11px] font-bold ${item.type === 'S' ? 'bg-red-200 text-red-700' : 'bg-green-200 text-green-700'}`}>
@@ -239,7 +233,7 @@ const TradesTransactions = ({ strategyType, transactions = [] }) => {
                                         <div className="flex flex-col items-center space-y-1">
                                             {row.items.map((item, i) => (
                                                 <div key={i} className="text-[11px] font-medium text-gray-600">
-                                                    {Math.round(item.units).toLocaleString()}
+                                                    {formatQty(item.units, currencySymbol)}
                                                 </div>
                                             ))}
                                         </div>

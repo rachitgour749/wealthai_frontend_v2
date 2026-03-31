@@ -10,12 +10,14 @@ import { selectIsBrokerConnected, updateBrokerConnectionStatus, selectIsExpired,
 import { selectCurrentTab, setCurrentTab } from '../store/slices/navigationSlice';
 import { showNotification } from '../store/slices/uiSlice';
 import { reconnectBroker, storeBrokerSession, getBrokerStatus } from '../api/services/brokerService';
+import { selectProducts, selectCredits } from '../store/slices/subscriptionSlice';
 import { selectUserEmail } from '../store/slices/userSlice';
 import LoginPopup from './LoginPopup';
 import UserAvatar from './Navbar/UserAvatar';
 import UserMenu from './Navbar/UserMenu';
 import NavIcons from './Navbar/NavIcons';
 import MobileMenu from './Navbar/MobileMenu';
+import DraggableClockCredits from './Navbar/DraggableClockCredits';
 import { useEffect } from 'react';
 
 const Navbar = ({ setCurrentPage }) => {
@@ -26,6 +28,7 @@ const Navbar = ({ setCurrentPage }) => {
     const activeBroker = useSelector(selectActiveBroker);
     const userEmail = useSelector(selectUserEmail);
     const user = useSelector(selectUser);
+    const credits = useSelector(selectCredits);
     const currentPage = useSelector(selectCurrentPage);
     const [menu, setMenu] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
@@ -196,6 +199,7 @@ const Navbar = ({ setCurrentPage }) => {
                     </div>
                 )}
 
+
                 {isAuthenticated && (
                     <div className='relative'>
                         <div
@@ -241,6 +245,9 @@ const Navbar = ({ setCurrentPage }) => {
 
             {/* Login Popup */}
             <LoginPopup isOpen={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
+
+            {/* Draggable Credit Clock */}
+            <DraggableClockCredits />
         </div>
     );
 };

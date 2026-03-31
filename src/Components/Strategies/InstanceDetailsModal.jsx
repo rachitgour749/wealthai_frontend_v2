@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { X, Info, Settings, Users, Link, Trash2, AlertTriangle, CheckSquare, Square } from 'lucide-react';
 import strategyService from '../../api/services/strategyService';
 import { showNotification } from '../../store/slices/uiSlice';
-import { formatDate } from '../../utils/formatUtils';
+import { formatDate, getCurrencySymbol } from '../../utils/formatUtils';
 
 const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
     const dispatch = useDispatch();
@@ -45,8 +45,8 @@ const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
 
     const clients = getClientInfo();
 
-    const getCurrencySymbol = () => instance.strategy_type === 'ETF_US' ? '$' : '₹';
-    const currencySymbol = getCurrencySymbol();
+    const currencySymbol = getCurrencySymbol(instance.strategy_type, instance.strategy_name);
+    const locale = currencySymbol === '$' ? 'en-US' : 'en-IN';
 
     // Map parameters to human readable names
     const paramLabels = {
@@ -126,7 +126,7 @@ const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
                         <div>
                             <h2 className="text-[16px] font-bold text-white leading-tight">Instance Details</h2>
                             <p className="text-white/70 text-[11px] font-medium uppercase tracking-wider">
-                                {instance.strategy_name} • {instance.strategy_type?.replace(/_/g, ' ')}
+                                {instance.strategy_name} ΓÇó {instance.strategy_type?.replace(/_/g, ' ')}
                             </p>
                         </div>
                     </div>
@@ -186,28 +186,41 @@ const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
                                     <h3 className="font-bold text-gray-800">Strategy Parameters</h3>
                                 </div>
                                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 grid grid-cols-2 gap-x-4 gap-y-2">
-                                    {Array.isArray(instance.strategies_parameters) ? (
-                                        instance.strategies_parameters.map((param, idx) => (
-                                            <div key={idx} className="flex flex-col">
-                                                <span className="text-gray-500 text-[11px] uppercase font-bold tracking-tight">
-                                                    {paramLabels[param.parameter_name] || param.parameter_name?.replace(/_/g, ' ')}
-                                                </span>
-                                                <span className="text-gray-800 font-semibold">{param.parameter_value}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        Object.entries(instance.strategies_parameters || {}).map(([key, value]) => (
-                                            <div key={key} className="flex flex-col">
-                                                <span className="text-gray-500 text-[11px] uppercase font-bold tracking-tight">
-                                                    {paramLabels[key] || key?.replace(/_/g, ' ')}
-                                                </span>
-                                                <span className="text-gray-800 font-semibold">{value}</span>
-                                            </div>
-                                        ))
-                                    )}
-                                    {(!instance.strategies_parameters || (Array.isArray(instance.strategies_parameters) && instance.strategies_parameters.length === 0) || (!Array.isArray(instance.strategies_parameters) && Object.keys(instance.strategies_parameters).length === 0)) && (
-                                        <p className="col-span-2 text-gray-400 text-sm italic">No parameters found</p>
-                                    )}
+                                    {(() => {
+                                        const renderParam = (name, val, idx) => {
+                                            if (val && typeof val === 'object' && !Array.isArray(val)) {
+                                                return Object.entries(val).map(([subKey, subVal], subIdx) => (
+                                                    <div key={`${idx}-${subIdx}`} className="flex flex-col">
+                                                        <span className="text-gray-500 text-[11px] uppercase font-bold tracking-tight">
+                                                            {paramLabels[subKey] || subKey?.replace(/_/g, ' ')}
+                                                        </span>
+                                                        <span className="text-gray-800 font-semibold">
+                                                            {typeof subVal === 'object' ? JSON.stringify(subVal) : String(subVal)}
+                                                        </span>
+                                                    </div>
+                                                ));
+                                            }
+
+                                            return (
+                                                <div key={idx} className="flex flex-col">
+                                                    <span className="text-gray-500 text-[11px] uppercase font-bold tracking-tight">
+                                                        {paramLabels[name] || name?.replace(/_/g, ' ')}
+                                                    </span>
+                                                    <span className="text-gray-800 font-semibold">{String(val)}</span>
+                                                </div>
+                                            );
+                                        };
+
+                                        if (Array.isArray(instance.strategies_parameters)) {
+                                            if (instance.strategies_parameters.length === 0) return <p className="col-span-2 text-gray-400 text-sm italic">No parameters found</p>;
+                                            return instance.strategies_parameters.flatMap((param, idx) => renderParam(param.parameter_name, param.parameter_value, idx));
+                                        } else if (instance.strategies_parameters && typeof instance.strategies_parameters === 'object') {
+                                            if (Object.keys(instance.strategies_parameters).length === 0) return <p className="col-span-2 text-gray-400 text-sm italic">No parameters found</p>;
+                                            return Object.entries(instance.strategies_parameters).flatMap(([key, value], idx) => renderParam(key, value, idx));
+                                        }
+
+                                        return <p className="col-span-2 text-gray-400 text-sm italic">No parameters found</p>;
+                                    })()}
                                 </div>
                             </section>
                         </div>
@@ -267,7 +280,7 @@ const InstanceDetailsModal = ({ isOpen, onClose, instance, onRefresh }) => {
                                                     </td>
                                                     <td className="px-2 py-2 text-sm font-bold text-wealth-800">{client.clientId}</td>
                                                     <td className="px-4 py-2 text-sm font-semibold text-gray-700 text-right">
-                                                        {currencySymbol}{Number(client.capital).toLocaleString(instance.strategy_type === 'ETF_US' ? 'en-US' : 'en-IN')}
+                                                        {currencySymbol}{Number(client.capital).toLocaleString(locale)}
                                                     </td>
                                                 </tr>
                                             ))}
