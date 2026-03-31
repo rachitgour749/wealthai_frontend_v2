@@ -280,6 +280,30 @@ export const fetchMarketHistory = createAsyncThunk(
     }
 );
 
+export const fetchStockalPlanList = createAsyncThunk(
+    'stockal/fetchPlanList',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await stockalService.getPlanList();
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch plan list');
+        }
+    }
+);
+
+export const activateStockalPlan = createAsyncThunk(
+    'stockal/activatePlan',
+    async ({ custId, planId }, { rejectWithValue }) => {
+        try {
+            const response = await stockalService.activatePlan(custId, planId);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to activate plan');
+        }
+    }
+);
+
 const initialState = {
     accountInfo: null,
     beneficiaries: [],
@@ -314,6 +338,8 @@ const initialState = {
         market: false,
         placingOrder: false,
         holdings: false,
+        plans: false,
+        activatingPlan: false,
     },
     error: {
         accountInfo: null,
@@ -331,6 +357,8 @@ const initialState = {
         orders: null,
         market: null,
         holdings: null,
+        plans: null,
+        activatingPlan: null,
     },
     custId: localStorage.getItem('stockal_custId') || null,
     ekycUrlData: null,
@@ -339,6 +367,7 @@ const initialState = {
     mainKycStatus: null, // APPROVED, PENDING, REJECTED, etc.
     mainKycStatusReason: null,
     isInitializing: true,
+    plans: [],
 };
 
 const stockalSlice = createSlice({
@@ -678,6 +707,33 @@ const stockalSlice = createSlice({
 
             .addCase(fetchMarketHistory.fulfilled, (state, action) => {
                 state.marketData.history = action.payload;
+            })
+
+            // Plan List
+            .addCase(fetchStockalPlanList.pending, (state) => {
+                state.loading.plans = true;
+                state.error.plans = null;
+            })
+            .addCase(fetchStockalPlanList.fulfilled, (state, action) => {
+                state.loading.plans = false;
+                state.plans = action.payload || [];
+            })
+            .addCase(fetchStockalPlanList.rejected, (state, action) => {
+                state.loading.plans = false;
+                state.error.plans = action.payload;
+            })
+
+            // Activate Plan
+            .addCase(activateStockalPlan.pending, (state) => {
+                state.loading.activatingPlan = true;
+                state.error.activatingPlan = null;
+            })
+            .addCase(activateStockalPlan.fulfilled, (state) => {
+                state.loading.activatingPlan = false;
+            })
+            .addCase(activateStockalPlan.rejected, (state, action) => {
+                state.loading.activatingPlan = false;
+                state.error.activatingPlan = action.payload;
             });
     },
 });

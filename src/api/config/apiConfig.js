@@ -73,6 +73,8 @@ export const API_ENDPOINTS = {
     STOCKAL_ORDER_CANCEL: (orderId) => `http://localhost:8001/api/v1/stockal/orders/cancel/${orderId}`,
     STOCKAL_MARKET_PRICE: `http://localhost:8001/api/v1/stockal/market/current-price`,
     STOCKAL_MARKET_HISTORY: `http://localhost:8001/api/v1/stockal/market/historical-prices`,
+    STOCKAL_PLAN_LIST: `http://localhost:8001/api/v1/stockal/plan-list`,
+    STOCKAL_PLAN_ADD: (custId) => `http://localhost:8001/api/v1/stockal/plan-add/${custId}`,
 
     // Webhook
     GET_WEBHOOKS: (userId) => `/api/webhook/user/${userId}`,

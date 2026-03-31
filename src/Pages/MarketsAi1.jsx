@@ -131,7 +131,7 @@ const MarketsAi1 = () => {
       { label: 'Strategies', value: 'Strategies' },
       { label: 'My Portfolio', value: 'MyPortfolio' },
       { label: 'Account Config', value: 'AddBroker' },
-      // { label: 'Borderless', value: 'Stockal' },
+      { label: 'Borderless', value: 'Stockal' },
       { label: 'Webhook', value: 'Webhook' },
     ];
   }, []);

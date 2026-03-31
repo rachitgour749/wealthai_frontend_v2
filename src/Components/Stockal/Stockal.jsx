@@ -8,7 +8,8 @@ import Account from './Account';
 import UserOnBoarding from './UserOnBoarding/UserOnBoarding';
 import PendingVerification from './UserOnBoarding/PendingVerification';
 import { setCurrentTab } from '../../store/slices/navigationSlice';
-import { validateStockalUser, fetchEkycStatus, fetchStockalAccountInfo } from '../../store/slices/stockalSlice';
+import { validateStockalUser, fetchEkycStatus, fetchStockalAccountInfo, fetchStockalPlanList } from '../../store/slices/stockalSlice';
+import PlanSelection from './PlanSelection';
 import { Loader2 } from 'lucide-react';
 
 const Stockal = () => {
@@ -27,7 +28,7 @@ const Stockal = () => {
     const [onboardingStep, setOnboardingStep] = useState(1);
     const dispatch = useDispatch();
 
-    const { isUserValidated, custId, kycStatus, kycStatusReason, mainKycStatus, mainKycStatusReason, isInitializing } = useSelector((state) => state.stockal);
+    const { isUserValidated, custId, kycStatus, kycStatusReason, mainKycStatus, mainKycStatusReason, isInitializing, accountInfo } = useSelector((state) => state.stockal);
     const { user } = useSelector((state) => state.user);
     const userEmail = user?.email;
 
@@ -125,6 +126,25 @@ const Stockal = () => {
         }
 
         if (isApproved) {
+            const hasActivePlan = accountInfo?.planDetails && Object.keys(accountInfo.planDetails).length > 0 && accountInfo.planDetails.status === 'active';
+            
+            if (!hasActivePlan) {
+                return (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="h-full w-full overflow-y-auto custom-scrollbar"
+                    >
+                        <PlanSelection 
+                            custId={custId} 
+                            onPlanActivated={() => {
+                                // Refresh account info is handled inside PlanSelection
+                                console.log('Plan activated, refreshing view');
+                            }}
+                        />
+                    </motion.div>
+                );
+            }
             return renderTab();
         }
 

@@ -300,6 +300,34 @@ const stockalService = {
             console.error('Error fetching market history:', error);
             throw error;
         }
+    },
+
+    /**
+     * Get available Stockal plans
+     */
+    getPlanList: async () => {
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.STOCKAL_PLAN_LIST);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching plan list:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Activate a Stockal plan for a customer
+     * @param {string} custId - The customer ID
+     * @param {string} planId - The plan ID to activate
+     */
+    activatePlan: async (custId, planId) => {
+        try {
+            const response = await axiosInstance.post(API_ENDPOINTS.STOCKAL_PLAN_ADD(custId), { planId });
+            return response.data;
+        } catch (error) {
+            console.error('Error activating plan:', error);
+            throw error;
+        }
     }
 };
 
