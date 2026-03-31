@@ -64,8 +64,6 @@ const MarketsAi1 = () => {
           dispatch(showNotification({ message: `Validation failed: ${error}`, type: 'error' }));
         }
       }
-        }
-      }
     } else {
       dispatch(setCurrentTab(tab));
     }
